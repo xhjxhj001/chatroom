@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Foundation\Validation\ValidatesRequests;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
-class IndexController extends BaseController
+class IndexController extends Controller
 {
     public function index()
     {
@@ -35,14 +33,63 @@ class IndexController extends BaseController
         );
         $url = 'https://api.weixin.qq.com/sns/jscode2session';
         $res = $this->request_post($url, $data);
+        $res = json_decode($res, true);
+        if($data = $this->getUser($res['openid'])){
+            return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $data));
+        }else{
+            $this->insertUser($request, $res['openid']);
+            $data = $this->getUser($res['openid']);
+            return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $data));
+        }
+
+    }
+
+    public function signUp(Request $request)
+    {
+        $openid = $request['openid'];
+        $user = $this->getUser($openid);
+        $res = $this->insertToList($user);
         return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
+    }
+
+    protected function getUser($openid)
+    {
+        $user = DB::table('user')->where('openid', $openid)->first();
+        return $user;
+    }
+
+    protected function insertToList($user)
+    {
+        $time = time();
+        $data = array(
+            'user_id' => $user['id'],
+            'ctime' => $time,
+            'mtime' => $time
+        );
+        $res = DB::table('sign_up')->insert($data);
+        return $res;
+    }
+
+    protected function insertUser($request, $openid)
+    {
+        $time = time();
+        $user = array(
+            'name' => $request['name'],
+            'avatar' => $request['avatar'],
+            'openid' => $openid,
+            'status' => 1,
+            'ctime' => $time,
+            'mtime' => $time
+        );
+        $res = DB::table('user')->insert($user);
+        return $res;
     }
 
     /**
      * 模拟post进行url请求
      * @param string $url
      * @param string $param
-     * @return array $data
+     * @return string $data
      */
     protected function request_post($url = '', $param = '')
     {
@@ -61,4 +108,5 @@ class IndexController extends BaseController
         curl_close($ch);
         return $data;
     }
+
 }

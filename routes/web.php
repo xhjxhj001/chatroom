@@ -21,3 +21,5 @@ Route::post('/initorder', 'OrderController@initorder');
 Route::post('/makeorder', 'OrderController@makeorder');
 
 Route::post('/login', 'IndexController@Login');
+Route::get('/user', 'IndexController@getUser');
+Route::post('/signup', 'IndexController@signUp');
