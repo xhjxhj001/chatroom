@@ -19,3 +19,5 @@ Route::get('/order', 'OrderController@getorder');
 Route::post('/orderbysql', 'OrderController@makeOrderByMysql');
 Route::post('/initorder', 'OrderController@initorder');
 Route::post('/makeorder', 'OrderController@makeorder');
+
+Route::post('/login', 'IndexController@Login');
