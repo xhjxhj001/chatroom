@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Redis;
 class IndexController extends Controller
 {
 
+    protected function checkparams($request, $arr)
+    {
+	foreach($arr as $item)
+	{
+	    if(!isset($request[$item])){
+		throw new Exception('params {$item} is not exist', 880330);
+	    }
+	}
+    }
+
     /**
      * 首页测试接口
      * @return string
@@ -32,6 +42,8 @@ class IndexController extends Controller
      */
     public function login(Request $request)
     {
+	$arr = array('code', 'name', 'avatar');
+	$this->checkparams($request, $arr);
 	#var_dump($request['name'],$request['code']);die;
         $appid = getenv('WECHAT_APP_APPID');
         $secret = getenv('WECHAT_APP_SECRET');
@@ -45,13 +57,12 @@ class IndexController extends Controller
         $url = 'https://api.weixin.qq.com/sns/jscode2session';
         $res = $this->request_post($url, $data);
         $res = json_decode($res, true);
-        if($data = $this->getUser($res['openid'])){
-            return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $data));
-        }else{
+        $data = $this->getUser($res['openid']);
+        if(empty($data)){
             $this->insertUser($request, $res['openid']);
             $data = $this->getUser($res['openid']);
-            return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $data));
         }
+        return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $data));
 
     }
 
@@ -99,7 +110,7 @@ class IndexController extends Controller
     protected function getUser($openid)
     {
         $user = DB::table('user')->where('openid', $openid)->first();
-	    return $user;
+	return $user;
     }
 
     /**
