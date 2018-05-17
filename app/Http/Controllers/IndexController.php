@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Redis;
 
 class IndexController extends Controller
 {
+
+    /**
+     * 首页测试接口
+     * @return string
+     */
     public function index()
     {
         $data = Redis::get('tmp');
@@ -20,6 +25,11 @@ class IndexController extends Controller
         }
     }
 
+    /**
+     * 登录接口
+     * @param Request $request
+     * @return string
+     */
     public function login(Request $request)
     {
         $appid = getenv('WECHAT_APP_APPID');
@@ -44,6 +54,11 @@ class IndexController extends Controller
 
     }
 
+    /**
+     * 报名接口
+     * @param Request $request
+     * @return string
+     */
     public function signUp(Request $request)
     {
         $openid = $request['openid'];
@@ -52,12 +67,34 @@ class IndexController extends Controller
         return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
     }
 
+    /**
+     * 获取用户信息
+     * @param $openid
+     * @return mixed
+     */
     protected function getUser($openid)
     {
         $user = DB::table('user')->where('openid', $openid)->first();
         return $user;
     }
 
+    /**
+     * 获取报名列表
+     * @return string
+     */
+    public function getSignList()
+    {
+        $res = DB::table('sign_up')
+                    ->leftjoin('user', 'sign_up.user_id', '=', 'user.id')
+                    ->get();
+        return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
+    }
+
+    /**
+     * 插入用户到报名列表
+     * @param $user
+     * @return mixed
+     */
     protected function insertToList($user)
     {
         $time = time();
