@@ -2,22 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use PHPUnit\Framework\Exception;
 
 class IndexController extends Controller
 {
 
     protected function checkparams($request, $arr)
     {
-	foreach($arr as $item)
-	{
-	    if(!isset($request[$item])){
-		throw new Exception('params {$item} is not exist', 880330);
-	    }
-	}
+        foreach($arr as $item)
+        {
+            if(!isset($request[$item])){
+                throw new Exception('params '. $item . ' is not exist', 880330);
+            }
+        }
     }
 
     /**
@@ -42,27 +44,31 @@ class IndexController extends Controller
      */
     public function login(Request $request)
     {
-	$arr = array('code', 'name', 'avatar');
-	$this->checkparams($request, $arr);
-	#var_dump($request['name'],$request['code']);die;
-        $appid = getenv('WECHAT_APP_APPID');
-        $secret = getenv('WECHAT_APP_SECRET');
-        $code = $request['code'];
-        $data = array(
-            'appid' => $appid,
-            'secret' => $secret,
-            'js_code' => $code,
-            'grant_type' => 'authorization_code'
-        );
-        $url = 'https://api.weixin.qq.com/sns/jscode2session';
-        $res = $this->request_post($url, $data);
-        $res = json_decode($res, true);
-        $data = $this->getUser($res['openid']);
-        if(empty($data)){
-            $this->insertUser($request, $res['openid']);
-            $data = $this->getUser($res['openid']);
+        try{
+            $arr = array('code', 'name', 'avatar');
+            $this->checkparams($request, $arr);
+            $appid = getenv('WECHAT_APP_APPID');
+            $secret = getenv('WECHAT_APP_SECRET');
+            $code = $request['code'];
+            $data = array(
+                'appid' => $appid,
+                'secret' => $secret,
+                'js_code' => $code,
+                'grant_type' => 'authorization_code'
+            );
+            $url = 'https://api.weixin.qq.com/sns/jscode2session';
+            $res = $this->request_post($url, $data);
+            $res = json_decode($res, true);
+            $data = DB::table('user')->where('openid', $res['openid'])->first();
+            if(empty($data)){
+                $this->insertUser($request, $res['openid']);
+                $data = $user = DB::table('user')->where('openid', $res['openid'])->first();
+            }
+            return $this->success($data);
+        }catch (Exception $e){
+            return $this->fail($e->getCode(),$e->getMessage());
         }
-        return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $data));
+
 
     }
 
@@ -76,13 +82,13 @@ class IndexController extends Controller
         if(empty($request['openid'])){
             return json_encode(array("errno" => 880331, "errmsg" => "openid error", "data" => null));
         }
-            $openid = $request['openid'];
-        $user = $this->getUser($openid);
+        $openid = $request['openid'];
+        $user = $user = DB::table('user')->where('openid', $openid)->first();
         $res = $this->insertToList($user);
         if($res == true){
             return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
         }else{
-                return json_encode(array("errno" => 880332, "errmsg" => "已报名", "data" => $res));
+            return json_encode(array("errno" => 880332, "errmsg" => "已报名", "data" => $res));
         }
     }
 
@@ -107,10 +113,33 @@ class IndexController extends Controller
      * @param $openid
      * @return mixed
      */
-    protected function getUser($openid)
+    public function getUser(Request $request)
     {
-        $user = DB::table('user')->where('openid', $openid)->first();
-	return $user;
+        try{
+            $arr = array('code');
+            $this->checkparams($request, $arr);
+            $appid = getenv('WECHAT_APP_APPID');
+            $secret = getenv('WECHAT_APP_SECRET');
+            $code = $request['code'];
+            $data = array(
+                'appid' => $appid,
+                'secret' => $secret,
+                'js_code' => $code,
+                'grant_type' => 'authorization_code'
+            );
+            $url = 'https://api.weixin.qq.com/sns/jscode2session';
+            $res = $this->request_post($url, $data);
+            $res = json_decode($res, true);
+            $data = DB::table('user')->where('openid', $res['openid'])->first();
+            if($data){
+                return $this->success($data);
+            }else{
+                return $this->fail(880333, 'user not exist');
+            }
+        }catch (Exception $e){
+            return $this->fail($e->getCode(),$e->getMessage());
+        }
+
     }
 
     /**
@@ -120,10 +149,10 @@ class IndexController extends Controller
      */
     protected function insertToList($user)
     {
-	$sign = DB::table('sign_up')->where('user_id', $user->id)->first();
-	if($sign){
-	    return false;
-	}
+	    $sign = DB::table('sign_up')->where('user_id', $user->id)->first();
+	    if($sign){
+	        return false;
+	    }
         $time = time();
         $data = array(
             'user_id' => $user->id,
