@@ -62,28 +62,32 @@ class IndexController extends Controller
      */
     public function signUp(Request $request)
     {
-	if(empty($request['openid'])){
-	    return json_encode(array("errno" => 880331, "errmsg" => "openid error", "data" => null));
-	}
-        $openid = $request['openid'];
-	$user = $this->getUser($openid); 
-	$res = $this->insertToList($user);
-	if($res == true){
-	    return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
-	}else{
-            return json_encode(array("errno" => 880332, "errmsg" => "已报名", "data" => $res));
-	}
+        if(empty($request['openid'])){
+            return json_encode(array("errno" => 880331, "errmsg" => "openid error", "data" => null));
+        }
+            $openid = $request['openid'];
+        $user = $this->getUser($openid);
+        $res = $this->insertToList($user);
+        if($res == true){
+            return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
+        }else{
+                return json_encode(array("errno" => 880332, "errmsg" => "已报名", "data" => $res));
+        }
     }
 
+    /**
+     * 获取报名列表
+     * @return string
+     */
     public function getSignList()
     {
         $res = DB::table('sign_up')
-			->select('user.name', 'user.avatar', 'sign_up.ctime')
-			->leftjoin('user', 'sign_up.user_id', '=', 'user.id')
-			->get();
-	foreach($res as &$item){
-	    $item->ctime = date('Y-m-d H:i:s', $item->ctime);
-	}
+            ->select('user.name', 'user.avatar', 'sign_up.ctime')
+            ->leftjoin('user', 'sign_up.user_id', '=', 'user.id')
+            ->get();
+        foreach($res as &$item){
+            $item->ctime = date('Y-m-d H:i:s', $item->ctime);
+        }
         return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
     }
 
@@ -95,19 +99,7 @@ class IndexController extends Controller
     protected function getUser($openid)
     {
         $user = DB::table('user')->where('openid', $openid)->first();
-	return $user;
-    }
-
-    /**
-     * 获取报名列表
-     * @return string
-     */
-    public function getSignList()
-    {
-        $res = DB::table('sign_up')
-                    ->leftjoin('user', 'sign_up.user_id', '=', 'user.id')
-                    ->get();
-        return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
+	    return $user;
     }
 
     /**
@@ -131,6 +123,12 @@ class IndexController extends Controller
         return $res;
     }
 
+    /**
+     * 插入用户到用户表
+     * @param $request
+     * @param $openid
+     * @return mixed
+     */
     protected function insertUser($request, $openid)
     {
         $time = time();
