@@ -22,6 +22,7 @@ class IndexController extends Controller
 
     public function login(Request $request)
     {
+	#var_dump($request['name'],$request['code']);die;
         $appid = getenv('WECHAT_APP_APPID');
         $secret = getenv('WECHAT_APP_SECRET');
         $code = $request['code'];
@@ -46,23 +47,46 @@ class IndexController extends Controller
 
     public function signUp(Request $request)
     {
+	if(empty($request['openid'])){
+	    return json_encode(array("errno" => 880331, "errmsg" => "openid error", "data" => null));
+	}
         $openid = $request['openid'];
-        $user = $this->getUser($openid);
-        $res = $this->insertToList($user);
+	$user = $this->getUser($openid); 
+	$res = $this->insertToList($user);
+	if($res == true){
+	    return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
+	}else{
+            return json_encode(array("errno" => 880332, "errmsg" => "已报名", "data" => $res));
+	}
+    }
+
+    public function getSignList()
+    {
+        $res = DB::table('sign_up')
+			->select('user.name', 'user.avatar', 'sign_up.ctime')
+			->leftjoin('user', 'sign_up.user_id', '=', 'user.id')
+			->get();
+	foreach($res as &$item){
+	    $item->ctime = date('Y-m-d H:i:s', $item->ctime);
+	}
         return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $res));
     }
 
     protected function getUser($openid)
     {
         $user = DB::table('user')->where('openid', $openid)->first();
-        return $user;
+	return $user;
     }
 
     protected function insertToList($user)
     {
+	$sign = DB::table('sign_up')->where('user_id', $user->id)->first();
+	if($sign){
+	    return false;
+	}
         $time = time();
         $data = array(
-            'user_id' => $user['id'],
+            'user_id' => $user->id,
             'ctime' => $time,
             'mtime' => $time
         );
