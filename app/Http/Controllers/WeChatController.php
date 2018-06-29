@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class WeChatController extends Controller
@@ -19,10 +18,8 @@ class WeChatController extends Controller
         $app = app('wechat.official_account');
         $app->server->push(function($message){
             if($message['MsgType'] == "text"){
-                $request = new Request();
-                $bot_session = $request->session()->get("bot_session");
                 $bot_id = 5886;
-                return $this->sendToBot($bot_id, $message['FromUserName'], $message['Content'], $bot_session);
+                return $this->sendToBot($bot_id, $message['FromUserName'], $message['Content']);
             }else{
                 return "欢迎关注 overtrue！";
             }
@@ -30,14 +27,14 @@ class WeChatController extends Controller
         return $app->server->serve();
     }
 
-    public function sendToBot($bot_id, $user_id, $message, $bot_session)
+    public function sendToBot($bot_id, $user_id, $message)
     {
         $access_token = getenv("UNIT_TOKEN");
         $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
         $data = array(
             "bot_id" => $bot_id,
             "version" => "2.0",
-            "bot_session" => $bot_session,
+            "bot_session" => "",
             "log_id" => "77585212",
             "request" => array(
                 "bernard_level" => 1,
@@ -65,8 +62,6 @@ class WeChatController extends Controller
         }else{
             $answer = $action_list[$answer_index]['say'];
         }
-
-        session("bot_session", $res['result']['bot_session']);
         return $answer;
     }
 
