@@ -18,17 +18,54 @@ class WeChatController extends Controller
 
         $app = app('wechat.official_account');
         $app->server->push(function($message){
-            return "欢迎关注 overtrue！";
+            if($message['MsgType'] == "text"){
+                return $this->sendToUnit($message['FromUserName'], $message['Content']);
+            }else{
+                return "欢迎关注 overtrue！";
+            }
         });
         return $app->server->serve();
+    }
+
+    public function sendToUnit($id, $message)
+    {
+        $access_token = getenv("UNIT_TOKEN");
+        $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
+        $data = array(
+            "bot_id" => 5,
+            "version" => "2.0",
+            "bot_session" => "",
+            "log_id" => "77585212",
+            "request" => array(
+                "bernard_level" => 1,
+                "client_session" => array(
+                    "client_results" => "",
+                    "candidate_options" => [],
+                ),
+                "query" => $message,
+                "query_info" => array(
+                    "asr_candidates" => [],
+                    "source" => "KEYBOARD",
+                    "type" => "TEXT"
+                ),
+                "updates" => "",
+                "user_id" => $id,
+            ),
+        );
+        $body = json_encode($data);
+        $res = $this->request_post($url, $body);
+        $action_list = $res['result']['response']['action_list'];
+        $answer_index = mt_rand(0, count($action_list) - 1);
+        $answer = $action_list[$answer_index]['say'];
+        return $answer;
     }
 
     /**
      * 模拟post进行url请求
      * @param string $url
      * @param string $param
-     * @return string $data
-     */
+     * @return array|bool $data
+     **/
     protected function request_post($url = '', $param = '')
     {
         if (empty($url) || empty($param)) {
@@ -43,6 +80,7 @@ class WeChatController extends Controller
         curl_setopt($ch, CURLOPT_POST, 1);//post提交方式
         curl_setopt($ch, CURLOPT_POSTFIELDS, $curlPost);
         $data = curl_exec($ch);//运行curl
+        $data = json_decode($data, true);
         curl_close($ch);
         return $data;
     }
