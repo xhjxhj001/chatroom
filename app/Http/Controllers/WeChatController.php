@@ -19,7 +19,8 @@ class WeChatController extends Controller
         $app = app('wechat.official_account');
         $app->server->push(function($message){
             if($message['MsgType'] == "text"){
-                return $this->sendToUnit($message['FromUserName'], $message['Content']);
+                $bot_id = 5886;
+                return $this->sendToBot($bot_id, $message['FromUserName'], $message['Content']);
             }else{
                 return "欢迎关注 overtrue！";
             }
@@ -27,7 +28,45 @@ class WeChatController extends Controller
         return $app->server->serve();
     }
 
-    public function sendToUnit($id, $message)
+    public function sendToBot($bot_id, $user_id, $message)
+    {
+        $access_token = getenv("UNIT_TOKEN");
+        $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
+        $data = array(
+            "bot_id" => $bot_id,
+            "version" => "2.0",
+            "bot_session" => "",
+            "log_id" => "77585212",
+            "request" => array(
+                "bernard_level" => 1,
+                "client_session" => array(
+                    "client_results" => "",
+                    "candidate_options" => [],
+                ),
+                "query" => $message,
+                "query_info" => array(
+                    "asr_candidates" => [],
+                    "source" => "KEYBOARD",
+                    "type" => "TEXT"
+                ),
+                "updates" => "",
+                "user_id" => $user_id,
+            ),
+        );
+        $body = json_encode($data);
+        $res = $this->request_post($url, $body);
+        $action_list = $res['result']['response']['action_list'];
+        $answer_index = mt_rand(0, count($action_list) - 1);
+        $type = $action_list[$answer_index]['type'];
+        if($type == "guide"){
+            $answer = $this->sendToChatBot($user_id, $message);
+        }else{
+            $answer = $action_list[$answer_index]['say'];
+        }
+        return $answer;
+    }
+
+    public function sendToChatBot($user_id, $message)
     {
         $access_token = getenv("UNIT_TOKEN");
         $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
@@ -49,7 +88,7 @@ class WeChatController extends Controller
                     "type" => "TEXT"
                 ),
                 "updates" => "",
-                "user_id" => $id,
+                "user_id" => $user_id,
             ),
         );
         $body = json_encode($data);
