@@ -39,10 +39,10 @@ class WeChatController extends Controller
             "log_id" => "77585212",
             "request" => array(
                 "bernard_level" => 1,
-                "client_session" => array(
+                "client_session" => json_encode(array(
                     "client_results" => "",
                     "candidate_options" => [],
-                ),
+                )),
                 "query" => $message,
                 "query_info" => array(
                     "asr_candidates" => [],
@@ -77,10 +77,10 @@ class WeChatController extends Controller
             "log_id" => "77585212",
             "request" => array(
                 "bernard_level" => 1,
-                "client_session" => array(
+                "client_session" => json_encode(array(
                     "client_results" => "",
                     "candidate_options" => [],
-                ),
+                )),
                 "query" => $message,
                 "query_info" => array(
                     "asr_candidates" => [],
@@ -107,6 +107,7 @@ class WeChatController extends Controller
      **/
     protected function request_post($url = '', $param = '')
     {
+        Log::info("curl start url: $url body: $param");
         if (empty($url) || empty($param)) {
             return false;
         }
@@ -119,6 +120,7 @@ class WeChatController extends Controller
         curl_setopt($ch, CURLOPT_POST, 1);//post提交方式
         curl_setopt($ch, CURLOPT_POSTFIELDS, $curlPost);
         $data = curl_exec($ch);//运行curl
+        Log::info("curl end result: $data");
         $data = json_decode($data, true);
         curl_close($ch);
         return $data;
