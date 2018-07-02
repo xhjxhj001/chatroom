@@ -22,7 +22,7 @@ class WeChatController extends Controller
         $app->server->push(function($message){
             if($message['MsgType'] == "text"){
                 return $this->sendToBot($message['FromUserName'], $message['Content']);
-            }else if($message['MsgType' == "voice"]) {
+            }else if($message['MsgType'] == "voice") {
                 return $this->sendToBot($message['FromUserName'], $message['Recognition']);
             }else{
                 return "欢迎关注 overtrue！";
