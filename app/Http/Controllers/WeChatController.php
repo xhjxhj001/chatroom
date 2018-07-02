@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use EasyWeChat\Kernel\Messages\Voice;
 
 class WeChatController extends Controller
 {
 
     const BOT_SESSION_KEY = 'bot_session_key';
+    const BOT_SET_KEY = 'bot_set_key';
+    protected $bot_set;
+    const UPLOAD_PATH = "/srv/laravel/blog/public/storage/";
 
     /**
      * 处理微信的请求消息
@@ -17,20 +22,35 @@ class WeChatController extends Controller
      */
     public function serve()
     {
+        $this->bot_set = Redis::get(self::BOT_SET_KEY);
         Log::info('request arrived.'); # 注意：Log 为 Laravel 组件，所以它记的日志去 Laravel 日志看，而不是 EasyWeChat 日志
         $app = app('wechat.official_account');
         $app->server->push(function($message){
             if($message['MsgType'] == "text"){
+                if($message['Content'] == "设置语音回复"){
+                    Redis::set(self::BOT_SET_KEY, 1);
+                    return "设置语音回复成功";
+                }
+                if($message['Content'] == "设置文字回复"){
+                    Redis::set(self::BOT_SET_KEY, 0);
+                    return "设置文字回复成功";
+                }
                 return $this->sendToBot($message['FromUserName'], $message['Content']);
             }else if($message['MsgType'] == "voice") {
                 return $this->sendToBot($message['FromUserName'], $message['Recognition']);
             }else{
-                return "欢迎关注 overtrue！";
+                return "欢迎关注 欢聚AI ———— 你的人工智能助手";
             }
         });
         return $app->server->serve();
     }
 
+    /**
+     * 发送给 AI 机器人 5886
+     * @param $user_id
+     * @param $message
+     * @return mixed|string|
+     */
     public function sendToBot($user_id, $message)
     {
         $bot_session = Redis::get(self::BOT_SESSION_KEY);
@@ -69,8 +89,6 @@ class WeChatController extends Controller
                 $slots = $res['result']['response']['schema']['slots'];
                 foreach ($slots as $slot){
                     if($slot['name'] == "user_location"){
-//                        $city = explode(">", $slot['normalized_word']);
-//                        $city = $city[count($city) - 1];
                         $city = $slot['original_word'];
                     }
                 }
@@ -82,9 +100,21 @@ class WeChatController extends Controller
             $answer = $action_list[$answer_index]['say'];
         }
         Redis::set(self::BOT_SESSION_KEY, $res['result']['bot_session']);
-        return $answer;
+        Redis::expire(self::BOT_SESSION_KEY, 60);
+
+        if($this->bot_set){
+            return $this->trans2voice($answer);
+        }else{
+            return $answer;
+        }
     }
 
+    /**
+     * 发送给闲聊机器人（无功能）
+     * @param $user_id
+     * @param $message
+     * @return mixed
+     */
     public function sendToChatBot($user_id, $message)
     {
         $access_token = getenv("UNIT_TOKEN");
@@ -138,10 +168,59 @@ class WeChatController extends Controller
                 "风向：" . $forecast['fx'] . "\n" .
                 "风力：" . $forecast['fl'] . "\n" .
                 "欢聚提醒你：" . $forecast['notice'];
+            if($this->bot_set){
+                $response = $city . "今天" . $forecast['type'] .
+                    "当前温度" . $res['data']['wendu'] .
+                    "最高气温" . $forecast['high'] .
+                    "最低气温" . $forecast['low'] .
+                    "空气质量" . $forecast['aqi'] .
+                    "风向" . $forecast['fx'] .
+                    "风力" . $forecast['fl']  .
+                    "欢聚提醒你" . $forecast['notice'];
+                $response = str_replace(' ', '', $response);
+            }
         }else{
             $response = "对不起，找不到 " .$city . "的天气情况";
         }
+        Log::info($response);
         return $response;
+    }
+
+    /**
+     * 文字转换成微信语音消息
+     * @param $text
+     * @return Voice
+     */
+    protected function trans2voice($text)
+    {
+        $mediaId = $this->text2audio($text);
+        return new Voice($mediaId);
+    }
+
+    /**
+     * baidu api 将文字转换语音并上传
+     * @param $text
+     * @return mixed
+     */
+    protected function text2audio($text)
+    {
+        $tok = getenv("VOICE_TOKEN");
+        $url = "https://tsn.baidu.com/text2audio?tex=$text&lan=zh&cuid=***&ctp=1&tok=$tok&per=3";
+        $this->request_get($url, false);
+        $mediaId = $this->uploadMedia();
+        return $mediaId;
+    }
+
+    /**
+     * 上次音频文件，获取mediaId
+     * @return mixed
+     */
+    protected function uploadMedia()
+    {
+        $app = app('wechat.official_account');
+        $path = self::UPLOAD_PATH . 'audio.mp3';
+        $res = $app->media->uploadVoice($path);
+        return $res["media_id"];
     }
 
     /**
@@ -152,11 +231,11 @@ class WeChatController extends Controller
      **/
     protected function request_post($url = '', $param = '')
     {
-        Log::info("curl start url: $url body: $param");
         if (empty($url) || empty($param)) {
             return false;
         }
         $postUrl = $url;
+        Log::info($url);
         $curlPost = $param;
         $ch = curl_init();//初始化curl
         curl_setopt($ch, CURLOPT_URL,$postUrl);//抓取指定网页
@@ -165,33 +244,34 @@ class WeChatController extends Controller
         curl_setopt($ch, CURLOPT_POST, 1);//post提交方式
         curl_setopt($ch, CURLOPT_POSTFIELDS, $curlPost);
         $data = curl_exec($ch);//运行curl
-        Log::info("curl end result: $data");
         $data = json_decode($data, true);
         curl_close($ch);
         return $data;
     }
 
     /**
-     * 模拟post进行url请求
+     * 模拟get进行url请求
      * @param string $url
-     * @param string $param
      * @return array|bool $data
      **/
-    protected function request_get($url = '')
+    protected function request_get($url = '', $json = true)
     {
-        Log::info("curl start url: $url");
         if (empty($url)){
             return false;
         }
         $postUrl = $url;
-
+        Log::info($url);
         $ch = curl_init();//初始化curl
         curl_setopt($ch, CURLOPT_URL,$postUrl);//抓取指定网页
         curl_setopt($ch, CURLOPT_HEADER, 0);//设置header
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);//要求结果为字符串且输出到屏幕上
         $data = curl_exec($ch);//运行curl
-        Log::info("curl end result: $data");
-        $data = json_decode($data, true);
+        if($json){
+            $data = json_decode($data, true);
+        }else{
+            $res = file_put_contents(self::UPLOAD_PATH . 'audio.mp3', $data);
+            Log::info($res);
+        }
         curl_close($ch);
         return $data;
     }
