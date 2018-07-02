@@ -19,7 +19,7 @@ class OrderController extends BaseController
     {
     	$key = "IphoneX:count";
     	$res = Redis::set($key, 100);
-	return "success,$res";
+    	return "success,$res";
     }
 
     public function makeorder()

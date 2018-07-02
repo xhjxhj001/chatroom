@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class WeChatController extends Controller
 {
+
+    const BOT_SESSION_KEY = 'bot_session_key';
 
     /**
      * 处理微信的请求消息
@@ -29,12 +32,13 @@ class WeChatController extends Controller
 
     public function sendToBot($bot_id, $user_id, $message)
     {
+        $bot_session = Redis::get(self::BOT_SESSION_KEY);
         $access_token = getenv("UNIT_TOKEN");
         $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
         $data = array(
             "bot_id" => $bot_id,
             "version" => "2.0",
-            "bot_session" => "",
+            "bot_session" => empty($bot_session) ? "" : $bot_session,
             "log_id" => "77585212",
             "request" => array(
                 "bernard_level" => 1,
@@ -62,6 +66,7 @@ class WeChatController extends Controller
         }else{
             $answer = $action_list[$answer_index]['say'];
         }
+        Redis::set(self::BOT_SESSION_KEY, $res['result']['bot_session']);
         return $answer;
     }
 
