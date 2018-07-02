@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
@@ -22,8 +21,9 @@ class WeChatController extends Controller
         $app = app('wechat.official_account');
         $app->server->push(function($message){
             if($message['MsgType'] == "text"){
-                $bot_id = 5886;
-                return $this->sendToBot($bot_id, $message['FromUserName'], $message['Content']);
+                return $this->sendToBot($message['FromUserName'], $message['Content']);
+            }else if($message['MsgType' == "voice"]) {
+                return $this->sendToBot($message['FromUserName'], $message['Recognition']);
             }else{
                 return "欢迎关注 overtrue！";
             }
@@ -31,13 +31,13 @@ class WeChatController extends Controller
         return $app->server->serve();
     }
 
-    public function sendToBot($bot_id, $user_id, $message)
+    public function sendToBot($user_id, $message)
     {
         $bot_session = Redis::get(self::BOT_SESSION_KEY);
         $access_token = getenv("UNIT_TOKEN");
         $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
         $data = array(
-            "bot_id" => $bot_id,
+            "bot_id" => 5886,
             "version" => "2.0",
             "bot_session" => empty($bot_session) ? "" : $bot_session,
             "log_id" => "77585212",
