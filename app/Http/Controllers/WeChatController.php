@@ -68,8 +68,9 @@ class WeChatController extends Controller
                 $slots = $res['result']['response']['schema']['slots'];
                 foreach ($slots as $slot){
                     if($slot['name'] == "user_location"){
-                        $city = explode(">", $slot['normalized_word']);
-                        $city = $city[1];
+//                        $city = explode(">", $slot['normalized_word']);
+//                        $city = $city[count($city) - 1];
+                        $city = $slot['original_word'];
                     }
                 }
                 $answer = $this->checkWeather($city);
@@ -125,15 +126,19 @@ class WeChatController extends Controller
     protected function checkWeather($city, $date = 0)
     {
         $url = "https://www.sojson.com/open/api/weather/json.shtml?city=" . $city;
-        $res = $this->request_post($url);
-        $forecast = $res["data"]["forecast"][$date];
-        $response = $city . "今天" . $forecast['type'] . "\n" .
-                    "最高气温：" . $forecast['high'] . "\n" .
-                    "最低气温：" . $forecast['low'] . "\n" .
-                    "空气质量：" . $forecast['aqi'] . "\n" .
-                    "风向：" . $forecast['fx'] . "\n" .
-                    "风力：" . $forecast['fl'] . "\n" .
-                    "欢聚提醒你：" . $forecast['notice'];
+        $res = $this->request_get($url);
+        if(isset($res['status'])){
+            $forecast = $res["data"]["forecast"][$date];
+            $response = $city . "今天" . $forecast['type'] . "\n" .
+                "最高气温：" . $forecast['high'] . "\n" .
+                "最低气温：" . $forecast['low'] . "\n" .
+                "空气质量：" . $forecast['aqi'] . "\n" .
+                "风向：" . $forecast['fx'] . "\n" .
+                "风力：" . $forecast['fl'] . "\n" .
+                "欢聚提醒你：" . $forecast['notice'];
+        }else{
+            $response = "对不起，找不到 " .$city . "的天气情况";
+        }
         return $response;
     }
 
@@ -163,5 +168,31 @@ class WeChatController extends Controller
         curl_close($ch);
         return $data;
     }
+
+    /**
+     * 模拟post进行url请求
+     * @param string $url
+     * @param string $param
+     * @return array|bool $data
+     **/
+    protected function request_get($url = '')
+    {
+        Log::info("curl start url: $url");
+        if (empty($url)){
+            return false;
+        }
+        $postUrl = $url;
+
+        $ch = curl_init();//初始化curl
+        curl_setopt($ch, CURLOPT_URL,$postUrl);//抓取指定网页
+        curl_setopt($ch, CURLOPT_HEADER, 0);//设置header
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);//要求结果为字符串且输出到屏幕上
+        $data = curl_exec($ch);//运行curl
+        Log::info("curl end result: $data");
+        $data = json_decode($data, true);
+        curl_close($ch);
+        return $data;
+    }
+
 
 }
