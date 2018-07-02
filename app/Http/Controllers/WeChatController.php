@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
@@ -130,6 +131,7 @@ class WeChatController extends Controller
         if(isset($res['status'])){
             $forecast = $res["data"]["forecast"][$date];
             $response = $city . "今天" . $forecast['type'] . "\n" .
+                "当前温度：" . $res['data']['wendu'] . "\n" .
                 "最高气温：" . $forecast['high'] . "\n" .
                 "最低气温：" . $forecast['low'] . "\n" .
                 "空气质量：" . $forecast['aqi'] . "\n" .
