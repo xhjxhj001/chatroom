@@ -61,7 +61,20 @@ class WeChatController extends Controller
         $action_list = $res['result']['response']['action_list'];
         $answer_index = mt_rand(0, count($action_list) - 1);
         $type = $action_list[$answer_index]['type'];
-        if($type == "guide"){
+        $reply = $action_list[$answer_index]['custom_reply'];
+        if(!empty($reply)){
+            $reply = json_decode($reply, true);
+            if($reply['func'] == "unit_search_weather"){
+                $slots = $res['result']['response']['schema']['slots'];
+                foreach ($slots as $slot){
+                    if($slot['name'] == "user_location"){
+                        $city = explode(">", $slot['normalized_word']);
+                        $city = $city[1];
+                    }
+                }
+                $answer = $this->checkWeather($city);
+            }
+        }else if($type == "guide"){
             $answer = $this->sendToChatBot($user_id, $message);
         }else{
             $answer = $action_list[$answer_index]['say'];
@@ -101,6 +114,27 @@ class WeChatController extends Controller
         $answer_index = mt_rand(0, count($action_list) - 1);
         $answer = $action_list[$answer_index]['say'];
         return $answer;
+    }
+
+    /**
+     * 查询天气
+     * @param $city
+     * @param int $date
+     * @return string
+     */
+    protected function checkWeather($city, $date = 0)
+    {
+        $url = "https://www.sojson.com/open/api/weather/json.shtml?city=" . $city;
+        $res = $this->request_post($url);
+        $forecast = $res["data"]["forecast"][$date];
+        $response = $city . "今天" . $forecast['type'] . "\n" .
+                    "最高气温：" . $forecast['high'] . "\n" .
+                    "最低气温：" . $forecast['low'] . "\n" .
+                    "空气质量：" . $forecast['aqi'] . "\n" .
+                    "风向：" . $forecast['fx'] . "\n" .
+                    "风力：" . $forecast['fl'] . "\n" .
+                    "欢聚提醒你：" . $forecast['notice'];
+        return $response;
     }
 
     /**
