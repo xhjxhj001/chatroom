@@ -64,7 +64,8 @@ class WeChatController extends Controller
 
     protected function dispatchUnitEvent($data, $action)
     {
-        new UnitEvent($data, $action);
+        $event = new UnitEvent($data, $action);
+        return $event->result;
     }
 
 

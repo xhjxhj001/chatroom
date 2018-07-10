@@ -14,7 +14,7 @@
 Route::get('/', function () {
     return view('welcome');
 });
-Route::any('/wechat', 'WeChatController@serve');
+Route::any('/wechat', 'Wechat\WeChatController@serve');
 Route::get('/test', 'IndexController@index');
 Route::get('/order', 'OrderController@getorder');
 Route::post('/orderbysql', 'OrderController@makeOrderByMysql');

@@ -26,7 +26,7 @@ class UnitEvent
     public $bot_session; // bot session
     public $message; // 发送消息
 
-    protected $response; // 回复消息
+    public $result; // 回复消息
 
     /**
      * 组装必须数据
@@ -53,20 +53,15 @@ class UnitEvent
         $this->message = $data['message'];
     }
 
-    public function setResult($response)
+    public function setResult($result)
     {
-        $this->response = $response;
+        $this->result = $result;
     }
 
     public function setBotSession($bot_session)
     {
         $key = RedisKey::UNIT_BOT_SESSION;
         EasyRedis::set($key, $bot_session, 60);
-    }
-
-    public function __destruct()
-    {
-        return $this->response;
     }
 
 }
