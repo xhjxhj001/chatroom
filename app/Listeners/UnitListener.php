@@ -1,65 +1,52 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Listeners;
 
-
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
+use App\Events\UnitEvent;
 use EasyWeChat\Kernel\Messages\Voice;
+use Illuminate\Support\Facades\Log;
 
-class WeChatController extends Controller
+class UnitListener extends BaseListener
 {
-
-    const BOT_SESSION_KEY = 'bot_session_key';
-    const BOT_SET_KEY = 'bot_set_key';
-    protected $bot_set;
     const UPLOAD_PATH = "/srv/laravel/blog/public/storage/";
-
     /**
-     * 处理微信的请求消息
+     * Create the event listener.
      *
-     * @return string
+     * @return void
      */
-    public function serve()
+    public function __construct()
     {
-        $this->bot_set = Redis::get(self::BOT_SET_KEY);
-        Log::info('request arrived.'); # 注意：Log 为 Laravel 组件，所以它记的日志去 Laravel 日志看，而不是 EasyWeChat 日志
-        $app = app('wechat.official_account');
-        $app->server->push(function($message){
-            if($message['MsgType'] == "text"){
-                if($message['Content'] == "设置语音回复"){
-                    Redis::set(self::BOT_SET_KEY, 1);
-                    return "设置语音回复成功";
-                }
-                if($message['Content'] == "设置文字回复"){
-                    Redis::set(self::BOT_SET_KEY, 0);
-                    return "设置文字回复成功";
-                }
-                return $this->sendToBot($message['FromUserName'], $message['Content']);
-            }else if($message['MsgType'] == "voice") {
-                return $this->sendToBot($message['FromUserName'], $message['Recognition']);
-            }else{
-                return "欢迎关注 欢聚AI ———— 你的人工智能助手";
-            }
-        });
-        return $app->server->serve();
+        //
     }
 
     /**
-     * 发送给 AI 机器人 5886
-     * @param $user_id
-     * @param $message
-     * @return mixed|string|
+     * @param UnitEvent $event
      */
-    public function sendToBot($user_id, $message)
+    public function handle(UnitEvent $event)
     {
-        $bot_session = Redis::get(self::BOT_SESSION_KEY);
+        switch ($event->action)
+        {
+            case UnitEvent::SEND:
+                $this->onSend($event);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * 发送给 AI 机器人
+     * @param UnitEvent $event
+     * @return Voice|string|void
+     */
+    public function onSend(UnitEvent $event)
+    {
         $access_token = getenv("UNIT_TOKEN");
         $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
         $data = array(
-            "bot_id" => 5886,
+            "bot_id" => $event->bot_id,
             "version" => "2.0",
-            "bot_session" => empty($bot_session) ? "" : $bot_session,
+            "bot_session" => $event->bot_session,
             "log_id" => "77585212",
             "request" => array(
                 "bernard_level" => 1,
@@ -67,18 +54,19 @@ class WeChatController extends Controller
                     "client_results" => "",
                     "candidate_options" => [],
                 )),
-                "query" => $message,
+                "query" => $event->message,
                 "query_info" => array(
                     "asr_candidates" => [],
                     "source" => "KEYBOARD",
                     "type" => "TEXT"
                 ),
                 "updates" => "",
-                "user_id" => $user_id,
+                "user_id" => $event->message,
             ),
         );
         $body = json_encode($data);
         $res = $this->request_post($url, $body);
+
         $action_list = $res['result']['response']['action_list'];
         $answer_index = mt_rand(0, count($action_list) - 1);
         $type = $action_list[$answer_index]['type'];
@@ -92,30 +80,27 @@ class WeChatController extends Controller
                         $city = $slot['original_word'];
                     }
                 }
-                $answer = $this->checkWeather($city);
+                $result = $this->checkWeather($event, $city);
             }
         }else if($type == "guide"){
-            $answer = $this->sendToChatBot($user_id, $message);
+            $result = $this->sendToChatBot($event);
         }else{
-            $answer = $action_list[$answer_index]['say'];
+            $result = $action_list[$answer_index]['say'];
         }
-        Redis::set(self::BOT_SESSION_KEY, $res['result']['bot_session']);
-        Redis::expire(self::BOT_SESSION_KEY, 60);
+        $event->setBotSession($res['result']['bot_session']);
+        // 如果开启语音回复模式，则转换成语音
+        if($event->response_mode){
+            $result = $this->trans2voice($result);
+        }
+        $event->setResult($result);
 
-        if($this->bot_set){
-            return $this->trans2voice($answer);
-        }else{
-            return $answer;
-        }
     }
 
     /**
      * 发送给闲聊机器人（无功能）
-     * @param $user_id
-     * @param $message
-     * @return mixed
+     * @param UnitEvent $event
      */
-    public function sendToChatBot($user_id, $message)
+    public function sendToChatBot(UnitEvent $event)
     {
         $access_token = getenv("UNIT_TOKEN");
         $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
@@ -130,14 +115,14 @@ class WeChatController extends Controller
                     "client_results" => "",
                     "candidate_options" => [],
                 )),
-                "query" => $message,
+                "query" => $event->message,
                 "query_info" => array(
                     "asr_candidates" => [],
                     "source" => "KEYBOARD",
                     "type" => "TEXT"
                 ),
                 "updates" => "",
-                "user_id" => $user_id,
+                "user_id" => $event->user_id,
             ),
         );
         $body = json_encode($data);
@@ -145,7 +130,7 @@ class WeChatController extends Controller
         $action_list = $res['result']['response']['action_list'];
         $answer_index = mt_rand(0, count($action_list) - 1);
         $answer = $action_list[$answer_index]['say'];
-        return $answer;
+        $event->setResult($answer);
     }
 
     /**
@@ -154,7 +139,7 @@ class WeChatController extends Controller
      * @param int $date
      * @return string
      */
-    protected function checkWeather($city, $date = 0)
+    protected function checkWeather(UnitEvent $event, $city, $date = 0)
     {
         $url = "https://www.sojson.com/open/api/weather/json.shtml?city=" . $city;
         $res = $this->request_get($url);
@@ -168,7 +153,7 @@ class WeChatController extends Controller
                 "风向：" . $forecast['fx'] . "\n" .
                 "风力：" . $forecast['fl'] . "\n" .
                 "欢聚提醒你：" . $forecast['notice'];
-            if($this->bot_set){
+            if($event->response_mode){
                 $response = $city . "今天" . $forecast['type'] .
                     "当前温度" . $res['data']['wendu'] .
                     "最高气温" . $forecast['high'] .
@@ -222,59 +207,5 @@ class WeChatController extends Controller
         $res = $app->media->uploadVoice($path);
         return $res["media_id"];
     }
-
-    /**
-     * 模拟post进行url请求
-     * @param string $url
-     * @param string $param
-     * @return array|bool $data
-     **/
-    protected function request_post($url = '', $param = '')
-    {
-        if (empty($url) || empty($param)) {
-            return false;
-        }
-        $postUrl = $url;
-        Log::info($url);
-        $curlPost = $param;
-        $ch = curl_init();//初始化curl
-        curl_setopt($ch, CURLOPT_URL,$postUrl);//抓取指定网页
-        curl_setopt($ch, CURLOPT_HEADER, 0);//设置header
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);//要求结果为字符串且输出到屏幕上
-        curl_setopt($ch, CURLOPT_POST, 1);//post提交方式
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $curlPost);
-        $data = curl_exec($ch);//运行curl
-        $data = json_decode($data, true);
-        curl_close($ch);
-        return $data;
-    }
-
-    /**
-     * 模拟get进行url请求
-     * @param string $url
-     * @return array|bool $data
-     **/
-    protected function request_get($url = '', $json = true)
-    {
-        if (empty($url)){
-            return false;
-        }
-        $postUrl = $url;
-        Log::info($url);
-        $ch = curl_init();//初始化curl
-        curl_setopt($ch, CURLOPT_URL,$postUrl);//抓取指定网页
-        curl_setopt($ch, CURLOPT_HEADER, 0);//设置header
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);//要求结果为字符串且输出到屏幕上
-        $data = curl_exec($ch);//运行curl
-        if($json){
-            $data = json_decode($data, true);
-        }else{
-            $res = file_put_contents(self::UPLOAD_PATH . 'audio.mp3', $data);
-            Log::info($res);
-        }
-        curl_close($ch);
-        return $data;
-    }
-
 
 }
