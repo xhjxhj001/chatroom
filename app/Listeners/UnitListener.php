@@ -9,15 +9,6 @@ use Illuminate\Support\Facades\Log;
 class UnitListener extends BaseListener
 {
     const UPLOAD_PATH = "/srv/laravel/blog/public/storage/";
-    /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
 
     /**
      * @param UnitEvent $event
