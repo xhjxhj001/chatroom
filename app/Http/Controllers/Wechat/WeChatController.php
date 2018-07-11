@@ -55,13 +55,21 @@ class WeChatController extends Controller
 
     }
 
+    /**
+     * 抛出 UNIT 事件
+     * @param $data
+     * @param $action
+     * @return bool|string
+     */
     protected function dispatchUnitEvent($data, $action)
     {
-        $unitEvent = new UnitEvent($data, $action);
+        // 检查 设置模式
         $voice_set = $this->setVoiceMode($data['user_id'], $data['message']);
         if($voice_set){
             return $voice_set;
         }
+        // 新建事件
+        $unitEvent = new UnitEvent($data, $action);
         event($unitEvent);
         return $unitEvent->result;
     }
