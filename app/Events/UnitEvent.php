@@ -50,7 +50,7 @@ class UnitEvent
         $this->user_id = $user_id;
         $this->message = $data['message'];
         //获取 bot session
-        $bot_session = EasyRedis::get(RedisKey::UNIT_BOT_MODE_SET . $user_id);
+        $bot_session = EasyRedis::get(RedisKey::UNIT_BOT_SESSION . $user_id);
         $this->bot_session = empty($bot_session) ? "" : $bot_session;
         //获取 bot 回复模式
         $response_mode = EasyRedis::get(RedisKey::UNIT_BOT_MODE_SET . $user_id);
