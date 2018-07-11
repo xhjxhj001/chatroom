@@ -66,9 +66,9 @@ class UnitEvent
         $this->result = $result;
     }
 
-    public function setBotSession($bot_session)
+    public function setBotSession($user_id, $bot_session)
     {
-        $key = RedisKey::UNIT_BOT_SESSION;
+        $key = RedisKey::UNIT_BOT_SESSION . $user_id;
         EasyRedis::set($key, $bot_session, 60);
     }
 

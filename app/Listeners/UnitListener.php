@@ -75,7 +75,7 @@ class UnitListener extends BaseListener
         }else{
             $result = $action_list[$answer_index]['say'];
         }
-        $event->setBotSession($res['result']['bot_session']);
+        $event->setBotSession($event->user_id, $res['result']['bot_session']);
         // 如果开启语音回复模式，则转换成语音
         if($event->response_mode){
             $result = $this->trans2voice($result, $event->voice_mode);
