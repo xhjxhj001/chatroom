@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Log;
 
 class UnitListener extends BaseListener
 {
-    const UPLOAD_PATH = "/srv/laravel/blog/public/storage/";
-
     /**
      * @param UnitEvent $event
      */
@@ -38,7 +36,7 @@ class UnitListener extends BaseListener
             "bot_id" => $event->bot_id,
             "version" => "2.0",
             "bot_session" => $event->bot_session,
-            "log_id" => "77585212",
+            "log_id" => time(),
             "request" => array(
                 "bernard_level" => 1,
                 "client_session" => json_encode(array(
@@ -52,7 +50,7 @@ class UnitListener extends BaseListener
                     "type" => "TEXT"
                 ),
                 "updates" => "",
-                "user_id" => $event->message,
+                "user_id" => $event->user_id,
             ),
         );
         $body = json_encode($data);
@@ -81,7 +79,7 @@ class UnitListener extends BaseListener
         $event->setBotSession($res['result']['bot_session']);
         // 如果开启语音回复模式，则转换成语音
         if($event->response_mode){
-            $result = $this->trans2voice($result);
+            $result = $this->trans2voice($result, $event->voice_mode);
         }
         $event->setResult($result);
 
@@ -99,7 +97,7 @@ class UnitListener extends BaseListener
             "bot_id" => 5,
             "version" => "2.0",
             "bot_session" => "",
-            "log_id" => "77585212",
+            "log_id" => time(),
             "request" => array(
                 "bernard_level" => 1,
                 "client_session" => json_encode(array(
@@ -121,7 +119,7 @@ class UnitListener extends BaseListener
         $action_list = $res['result']['response']['action_list'];
         $answer_index = mt_rand(0, count($action_list) - 1);
         $answer = $action_list[$answer_index]['say'];
-        $event->setResult($answer);
+        return $answer;
     }
 
     /**
@@ -165,24 +163,26 @@ class UnitListener extends BaseListener
     /**
      * 文字转换成微信语音消息
      * @param $text
+     * @param $voice
      * @return Voice
      */
-    protected function trans2voice($text)
+    protected function trans2voice($text, $voice)
     {
-        $mediaId = $this->text2audio($text);
+        $mediaId = $this->text2audio($text, $voice);
         return new Voice($mediaId);
     }
 
     /**
      * baidu api 将文字转换语音并上传
      * @param $text
+     * @param $voice
      * @return mixed
      */
-    protected function text2audio($text)
+    protected function text2audio($text, $voice)
     {
         $tok = getenv("VOICE_TOKEN");
-        $url = "https://tsn.baidu.com/text2audio?tex=$text&lan=zh&cuid=***&ctp=1&tok=$tok&per=3";
-        $this->request_get($url, false);
+        $url = "https://tsn.baidu.com/text2audio?tex=$text&lan=zh&cuid=***&ctp=1&tok=$tok&per=" . $voice;
+        $this->request_get($url, true, storage_path("app/public/audio.mp3"));
         $mediaId = $this->uploadMedia();
         return $mediaId;
     }
@@ -194,7 +194,7 @@ class UnitListener extends BaseListener
     protected function uploadMedia()
     {
         $app = app('wechat.official_account');
-        $path = self::UPLOAD_PATH . 'audio.mp3';
+        $path = storage_path("app/public/audio.mp3");
         $res = $app->media->uploadVoice($path);
         return $res["media_id"];
     }
