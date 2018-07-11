@@ -46,8 +46,8 @@ class UnitEvent
     {
         $user_id = $data['user_id'];
         $this->action = $action;
-        $this->bot_id = $this->checkUser($user_id);
-        $this->user_id = $data['user_id'];
+        $this->checkUser($user_id);
+        $this->user_id = $user_id;
         $this->message = $data['message'];
         //获取 bot session
         $bot_session = EasyRedis::get(RedisKey::UNIT_BOT_MODE_SET . $user_id);
@@ -80,8 +80,7 @@ class UnitEvent
 
     /**
      * 检查用户来源
-     * @param $openId
-     * @return int
+     * @param $user_id
      */
     protected function checkUser($user_id)
     {
@@ -94,13 +93,12 @@ class UnitEvent
                 break;
             case "oLIAK0gFuUw_yGsUdBxPxiXmJKeo":
                 Redis::set($key, self::VOICE_WOMAN);
-                $bot_id = self::BOT_GIRL;
+                $this->bot_id = self::BOT_GIRL;
                 break;
             default:
-                $bot_id = self::BOT_COMMON;
+                $this->bot_id = self::BOT_COMMON;
                 break;
         }
-        return $bot_id;
     }
 
 }

@@ -58,7 +58,10 @@ class WeChatController extends Controller
     protected function dispatchUnitEvent($data, $action)
     {
         $unitEvent = new UnitEvent($data, $action);
-        $this->setVoiceMode($data['user_id'], $data['message']);
+        $voice_set = $this->setVoiceMode($data['user_id'], $data['message']);
+        if($voice_set){
+            return $voice_set;
+        }
         event($unitEvent);
         return $unitEvent->result;
     }
