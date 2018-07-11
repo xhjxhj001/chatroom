@@ -11,12 +11,20 @@ use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Support\Facades\Redis;
 
 class UnitEvent
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    const SEND = 1;
+    const SEND = 1;  // 发送操作
+    const BOT_BOY = 5886; // 男机器人
+    const BOT_GIRL = 6599; // 女机器人
+    const BOT_COMMON = 5766; // 普通机器人
+
+    const VOICE_WOMAN = 0; // 女性声音
+    const VOICE_MAN = 1; // 男性声音
+
 
     public $action; // 操作
     public $bot_id; // 机器人id
@@ -36,21 +44,21 @@ class UnitEvent
      */
     public function __construct($data, $action)
     {
+        $user_id = $data['user_id'];
         $this->action = $action;
-        //获取 bot session
-        $bot_session = EasyRedis::get(RedisKey::UNIT_BOT_SESSION);
-        $this->bot_session = empty($bot_session) ? "" : $bot_session;
-        //获取 bot 回复模式
-        $response_mode = EasyRedis::get(RedisKey::UNIT_BOT_MODE_SET);
-        $this->response_mode = empty($response_mode) ? 0 : $response_mode ;
-        if($response_mode != 0){
-            $voice_mode = EasyRedis::get(RedisKey::UNIT_BOT_VOICE_SET);
-            $this->voice_mode = empty($voice_mode) ? 1 : $voice_mode;
-        }
-        //获取 bot 语音模式
-        $this->bot_id = $data['bot_id'];
+        $this->bot_id = $this->checkUser($user_id);
         $this->user_id = $data['user_id'];
         $this->message = $data['message'];
+        //获取 bot session
+        $bot_session = EasyRedis::get(RedisKey::UNIT_BOT_MODE_SET . $user_id);
+        $this->bot_session = empty($bot_session) ? "" : $bot_session;
+        //获取 bot 回复模式
+        $response_mode = EasyRedis::get(RedisKey::UNIT_BOT_MODE_SET . $user_id);
+        $this->response_mode = empty($response_mode) ? 0 : $response_mode ;
+        if($response_mode != 0){
+            $voice_mode = EasyRedis::get(RedisKey::UNIT_BOT_VOICE_SET . $user_id);
+            $this->voice_mode = empty($voice_mode) ? 1 : $voice_mode;
+        }
     }
 
     public function setResult($result)
@@ -62,6 +70,37 @@ class UnitEvent
     {
         $key = RedisKey::UNIT_BOT_SESSION;
         EasyRedis::set($key, $bot_session, 60);
+    }
+
+    public function setVoiceMode($openId, $mode)
+    {
+        $key = RedisKey::UNIT_BOT_MODE_SET . $openId;
+        Redis::set($key, $mode);
+    }
+
+    /**
+     * 检查用户来源
+     * @param $openId
+     * @return int
+     */
+    protected function checkUser($user_id)
+    {
+        $key = RedisKey::UNIT_BOT_VOICE_SET . $user_id;
+        switch ($user_id)
+        {
+            case "oLIAK0hNsAVzyxh3pmWLSNfNibwc":
+                $this->bot_id = self::BOT_BOY;
+                Redis::set($key, self::VOICE_MAN);
+                break;
+            case "oLIAK0gFuUw_yGsUdBxPxiXmJKeo":
+                Redis::set($key, self::VOICE_WOMAN);
+                $bot_id = self::BOT_GIRL;
+                break;
+            default:
+                $bot_id = self::BOT_COMMON;
+                break;
+        }
+        return $bot_id;
     }
 
 }
