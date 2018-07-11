@@ -45,6 +45,7 @@ class WeChatController extends Controller
                             "message" => $message['Content'],
                             "bot_id" => $bot_id
                         );
+                        Log::info('request data:' . json_encode($data));
                         $this->answer =$this->dispatchUnitEvent($data, UnitEvent::SEND);
                         break;
                     case "voice":
@@ -53,6 +54,7 @@ class WeChatController extends Controller
                             "message" => $message['Recognition'],
                             "bot_id" => $bot_id
                         );
+                        Log::info('request data:' . json_encode($data));
                         $this->answer =$this->dispatchUnitEvent($data, UnitEvent::SEND);
                         break;
                     default :

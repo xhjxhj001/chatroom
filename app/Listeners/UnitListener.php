@@ -4,7 +4,6 @@ namespace App\Listeners;
 
 use App\Events\UnitEvent;
 use EasyWeChat\Kernel\Messages\Voice;
-use Illuminate\Support\Facades\Log;
 
 class UnitListener extends BaseListener
 {
@@ -156,7 +155,6 @@ class UnitListener extends BaseListener
         }else{
             $response = "对不起，找不到 " .$city . "的天气情况";
         }
-        Log::info($response);
         return $response;
     }
 
