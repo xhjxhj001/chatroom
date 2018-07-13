@@ -83,7 +83,7 @@ class UnitListener extends BaseListener
         $event->setBotSession($event->user_id, $res['result']['bot_session']);
         // 如果开启语音回复模式，则转换成语音
         if($event->response_mode){
-            $result = $this->trans2voice($result, $event->voice_mode);
+            $result = $this->trans2voice($result, $event->voice_mode, $event->user_id);
         }
         $event->setResult($result);
 
@@ -210,9 +210,9 @@ class UnitListener extends BaseListener
      * @param $voice
      * @return Voice
      */
-    protected function trans2voice($text, $voice)
+    protected function trans2voice($text, $voice, $user_id)
     {
-        $mediaId = $this->text2audio($text, $voice);
+        $mediaId = $this->text2audio($text, $voice, $user_id);
         return new Voice($mediaId);
     }
 
@@ -222,12 +222,12 @@ class UnitListener extends BaseListener
      * @param $voice
      * @return mixed
      */
-    protected function text2audio($text, $voice)
+    protected function text2audio($text, $voice, $user_id)
     {
         $tok = getenv("VOICE_TOKEN");
         $url = "https://tsn.baidu.com/text2audio?tex=$text&lan=zh&cuid=***&ctp=1&tok=$tok&per=" . $voice;
-        $this->request_get($url, true, storage_path("app/public/audio.mp3"));
-        $mediaId = $this->uploadMedia();
+        $this->request_get($url, true, storage_path("app/public/{$user_id}_audio.mp3"));
+        $mediaId = $this->uploadMedia($user_id);
         return $mediaId;
     }
 
@@ -235,10 +235,10 @@ class UnitListener extends BaseListener
      * 上次音频文件，获取mediaId
      * @return mixed
      */
-    protected function uploadMedia()
+    protected function uploadMedia($user_id)
     {
         $app = app('wechat.official_account');
-        $path = storage_path("app/public/audio.mp3");
+        $path = storage_path("app/public/{$user_id}_audio.mp3");
         $res = $app->media->uploadVoice($path);
         return $res["media_id"];
     }
