@@ -83,13 +83,22 @@ class WeChatController extends Controller
     protected function setVoiceMode($openId, $message)
     {
         $key = RedisKey::UNIT_BOT_MODE_SET . $openId;
-        if($message == "设置语音回复"){
+        $key_voice_set = RedisKey::UNIT_BOT_VOICE_SET . $openId;
+        if($message == "设置语音回复" || $message == "设置语音回复。"){
             Redis::set($key, 1);
             return "设置语音回复成功";
         }
-        if($message == "设置文字回复"){
+        if($message == "设置文字回复" || $message == "设置文字回复。"){
             Redis::set($key, 0);
             return "设置文字回复成功";
+        }
+        if($message == "设置女生回复" || $message == "设置女生回复。"){
+            Redis::set($key_voice_set, UnitEvent::VOICE_WOMAN);
+            return "设置女生回复成功";
+        }
+        if($message == "设置男生回复" || $message == "设置男生回复。"){
+            Redis::set($key_voice_set, UnitEvent::VOICE_MAN);
+            return "设置男生回复成功";
         }
         return false;
     }
