@@ -67,8 +67,12 @@ class UnitListener extends BaseListener
                     if($slot['name'] == "user_location"){
                         $city = $slot['original_word'];
                     }
+                    if($slot['name'] == "user_time"){
+                        $date_input = $slot['original_word'];
+                        $date_nor = $slot['normalized_word'];
+                    }
                 }
-                $result = $this->checkWeather($event, $city);
+                $result = $this->BaiduWeather($event, $city, $date_input, $date_nor);
             }
         }else if($type == "guide"){
             $result = $this->sendToChatBot($event);
@@ -150,6 +154,47 @@ class UnitListener extends BaseListener
                     "风向" . $forecast['fx'] .
                     "风力" . $forecast['fl']  .
                     "欢聚提醒你" . $forecast['notice'];
+                $response = str_replace(' ', '', $response);
+            }
+        }else{
+            $response = "对不起，找不到 " .$city . "的天气情况";
+        }
+        return $response;
+    }
+
+    /**
+     * 查询天气
+     * @param $city
+     * @param int $date
+     * @return string
+     */
+    protected function BaiduWeather(UnitEvent $event, $city, $date_input, $date_nor)
+    {
+        $oneday = 60*60*24;
+        $today = strtotime(date("Y-m-d", time()));
+        $time = strtotime($date_nor);
+        $num = ($time - $today)/$oneday;
+        if($num < 0 || $num > 3) {
+            return "对不起，无法查询 {$date_input} 的天气情况";
+        }
+        $ak = getenv("BAIDU_AK");
+        $url = "http://api.map.baidu.com/telematics/v3/weather?location=$city&output=json&ak=$ak";
+        $res = $this->request_get($url);
+        if($res['error'] == 0){
+            $forecast = $res["results"]["weather_data"][$num];
+            $current_tem = $res["results"]["weather_data"][0]["date"];
+            $current_tem = explode(":", $current_tem);
+            $current_tem = $current_tem[1];
+            $current_tem = substr($current_tem, 0, -1);
+            $response = $city . $date_input . $forecast['weather'] . "\n" .
+                "当前温度：" . $current_tem . "\n" .
+                "温度：" . $forecast['temperature'] . "\n" .
+                "风力：" . $forecast['wind'] . "\n";
+            if($event->response_mode){
+                $response = $city . $date_input . $forecast['weather'] . "\n" .
+                    "当前温度" . $current_tem . "\n" .
+                    "温度" . $forecast['temperature'] . "\n" .
+                    "风力" . $forecast['wind'] . "\n";
                 $response = str_replace(' ', '', $response);
             }
         }else{

@@ -57,7 +57,7 @@ class UnitEvent
         $this->response_mode = empty($response_mode) ? 0 : $response_mode ;
         if($response_mode != 0){
             $voice_mode = EasyRedis::get(RedisKey::UNIT_BOT_VOICE_SET . $user_id);
-            $this->voice_mode = empty($voice_mode) ? 1 : $voice_mode;
+            $this->voice_mode = empty($voice_mode) ? self::VOICE_WOMAN : $voice_mode;
         }
     }
 
