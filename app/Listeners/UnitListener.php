@@ -192,9 +192,9 @@ class UnitListener extends BaseListener
                 "温度：" . $forecast['temperature'] . "\n" .
                 "风力：" . $forecast['wind'];
             if($event->response_mode){
-                $response = $city . $date_input . $forecast['weather'] . "\n" .
-                    "当前温度" . $current_tem . "\n" .
-                    "温度" . $forecast['temperature'] . "\n" .
+                $response = $city . $date_input . $forecast['weather'] .
+                    "当前温度" . $current_tem .
+                    "温度" . $forecast['temperature'] .
                     "风力" . $forecast['wind'];
                 $response = str_replace(' ', '', $response);
             }
