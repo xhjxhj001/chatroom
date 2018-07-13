@@ -189,12 +189,12 @@ class UnitListener extends BaseListener
             $current_tem = substr($current_tem, 0, -1);
             $response = $city . $date_input . $forecast['weather'] . "\n" .
                 "当前温度：" . $current_tem . "\n" .
-                "温度：" . $forecast['temperature'] . "\n" .
+                "$date_input 温度：" . $forecast['temperature'] . "\n" .
                 "风力：" . $forecast['wind'];
             if($event->response_mode){
                 $response = $city . $date_input . $forecast['weather'] .
                     "当前温度" . $current_tem .
-                    "温度" . $forecast['temperature'] .
+                    "$date_input 温度" . $forecast['temperature'] .
                     "风力" . $forecast['wind'];
                 $response = str_replace(' ', '', $response);
             }
