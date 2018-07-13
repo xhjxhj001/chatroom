@@ -199,7 +199,7 @@ class UnitListener extends BaseListener
                 $response = str_replace(' ', '', $response);
             }
         }else{
-            $response = "对不起，找不到 " .$city . "的天气情况";
+            $response = "对不起，找不到{$city}的天气情况";
         }
         return $response;
     }
