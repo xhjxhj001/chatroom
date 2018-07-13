@@ -25,3 +25,7 @@ Route::post('/login', 'IndexController@Login');
 Route::get('/user', 'IndexController@getUser');
 Route::post('/signup', 'IndexController@signUp');
 Route::get('/signlist', 'IndexController@getSignList');
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
