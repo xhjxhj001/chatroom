@@ -176,7 +176,7 @@ class UnitListener extends BaseListener
         $time = strtotime($date_nor);
         $num = ($time - $today)/$oneday;
         if($num < 0 || $num > 3) {
-            return "对不起，无法查询 {$date_input} 的天气情况";
+            return "对不起，无法查询 $city {$date_input} 的天气情况";
         }
         $ak = getenv("BAIDU_AK");
         $url = "http://api.map.baidu.com/telematics/v3/weather?location=$city&output=json&ak=$ak";
