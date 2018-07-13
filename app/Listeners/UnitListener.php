@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\UnitEvent;
 use EasyWeChat\Kernel\Messages\Voice;
+use Illuminate\Support\Facades\Log;
 
 class UnitListener extends BaseListener
 {
@@ -181,20 +182,20 @@ class UnitListener extends BaseListener
         $url = "http://api.map.baidu.com/telematics/v3/weather?location=$city&output=json&ak=$ak";
         $res = $this->request_get($url);
         if($res['error'] == 0){
-            $forecast = $res["results"]["weather_data"][$num];
-            $current_tem = $res["results"]["weather_data"][0]["date"];
-            $current_tem = explode(":", $current_tem);
+            $forecast = $res["results"][0]["weather_data"][$num];
+            $current_tem = $res["results"][0]["weather_data"][0]["date"];
+            $current_tem = explode("：", $current_tem);
             $current_tem = $current_tem[1];
             $current_tem = substr($current_tem, 0, -1);
             $response = $city . $date_input . $forecast['weather'] . "\n" .
                 "当前温度：" . $current_tem . "\n" .
                 "温度：" . $forecast['temperature'] . "\n" .
-                "风力：" . $forecast['wind'] . "\n";
+                "风力：" . $forecast['wind'];
             if($event->response_mode){
                 $response = $city . $date_input . $forecast['weather'] . "\n" .
                     "当前温度" . $current_tem . "\n" .
                     "温度" . $forecast['temperature'] . "\n" .
-                    "风力" . $forecast['wind'] . "\n";
+                    "风力" . $forecast['wind'];
                 $response = str_replace(' ', '', $response);
             }
         }else{
