@@ -176,7 +176,7 @@ class UnitListener extends BaseListener
         $time = strtotime($date_nor);
         $num = ($time - $today)/$oneday;
         if($num < 0 || $num > 3) {
-            return "对不起，无法查询 $city {$date_input} 的天气情况";
+            return "对不起，无法查询{$city}{$date_input}的天气情况";
         }
         $ak = getenv("BAIDU_AK");
         $url = "http://api.map.baidu.com/telematics/v3/weather?location=$city&output=json&ak=$ak";
@@ -187,14 +187,14 @@ class UnitListener extends BaseListener
             $current_tem = explode("：", $current_tem);
             $current_tem = $current_tem[1];
             $current_tem = substr($current_tem, 0, -1);
-            $response = $city . $date_input . $forecast['weather'] . "\n" .
-                "当前温度：" . $current_tem . "\n" .
-                "$date_input 温度：" . $forecast['temperature'] . "\n" .
+            $response = $city . "当前温度：" . $current_tem . "\n" .
+                $date_input . $forecast['weather'] . "\n" .
+                "温度：" . $forecast['temperature'] . "\n" .
                 "风力：" . $forecast['wind'];
             if($event->response_mode){
-                $response = $city . $date_input . $forecast['weather'] .
-                    "当前温度" . $current_tem .
-                    "$date_input 温度" . $forecast['temperature'] .
+                $response = $city . "当前温度" . $current_tem . ";" .
+                    $date_input . $forecast['weather'] . ";" .
+                    "温度" . $forecast['temperature'] . ";" .
                     "风力" . $forecast['wind'];
                 $response = str_replace(' ', '', $response);
             }
