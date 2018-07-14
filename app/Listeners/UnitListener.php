@@ -75,7 +75,7 @@ class UnitListener extends BaseListener
                 }
                 $result = $this->BaiduWeather($event, $city, $date_input, $date_nor);
             }
-        }else if($type == "guide"){
+        }else if($type == "guide" || $type == "failure"){
             $result = $this->sendToChatBot($event);
         }else{
             $result = $action_list[$answer_index]['say'];
