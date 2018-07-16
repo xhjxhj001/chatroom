@@ -39,18 +39,13 @@ class ThirdPartAPI extends BaseListener
         }
         switch ($type)
         {
-            case "today" || "tomorrow":
-                if($type == "tomorrow"){
-                    $date = "明日";
-                }else{
-                    $date = "今日";
-                }
+            case "today":
                 $all = $this->score2star($res['all']);
                 $health = $this->score2star($res['health']);
                 $love = $this->score2star($res['love']);
                 $money = $this->score2star($res['money']);
                 $work = $this->score2star($res['work']);
-                $response = "{$name}{$date}运势" ."\n" .
+                $response = "{$name}今日运势" ."\n" .
                             "综合运势：{$all}" . "\n" .
                             "爱情指数：{$love}" . "\n" .
                             "财运指数：{$money}" . "\n" .
@@ -61,11 +56,28 @@ class ThirdPartAPI extends BaseListener
                             "幸运颜色：{$res['color']}" . "\n" .
                             "星座寄语：{$res['summary']}";
                 break;
+            case "tomorrow":
+                $all = $this->score2star($res['all']);
+                $health = $this->score2star($res['health']);
+                $love = $this->score2star($res['love']);
+                $money = $this->score2star($res['money']);
+                $work = $this->score2star($res['work']);
+                $response = "{$name}明日运势" ."\n" .
+                    "综合运势：{$all}" . "\n" .
+                    "爱情指数：{$love}" . "\n" .
+                    "财运指数：{$money}" . "\n" .
+                    "健康指数：{$health}" . "\n" .
+                    "工作指数：{$work}" . "\n" .
+                    "速配星座：{$res['QFriend']}" . "\n" .
+                    "幸运数字：{$res['number']}" . "\n" .
+                    "幸运颜色：{$res['color']}" . "\n" .
+                    "星座寄语：{$res['summary']}";
+                break;
             case "week":
                 $response = "{$name}本周运势" ."\n" .
-                $res['love'] . "\n" .
-                $res['money'] . "\n" .
-                $res['work'];
+                    $res['love'] . "\n" .
+                    $res['money'] . "\n" .
+                    $res['work'];
                 break;
             case "month":
                 $response = "{$name}本月运势" ."\n" .
