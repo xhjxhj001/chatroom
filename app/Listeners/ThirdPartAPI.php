@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Log;
 
 class ThirdPartAPI extends BaseListener
 {
@@ -39,12 +40,17 @@ class ThirdPartAPI extends BaseListener
         switch ($type)
         {
             case "today" || "tomorrow":
+                if($type == "tomorrow"){
+                    $date = "明日";
+                }else{
+                    $date = "今日";
+                }
                 $all = $this->score2star($res['all']);
                 $health = $this->score2star($res['health']);
                 $love = $this->score2star($res['love']);
                 $money = $this->score2star($res['money']);
                 $work = $this->score2star($res['work']);
-                $response = "{$name}今日运势" ."\n" .
+                $response = "{$name}{$date}运势" ."\n" .
                             "综合运势：{$all}" . "\n" .
                             "爱情指数：{$love}" . "\n" .
                             "财运指数：{$money}" . "\n" .
@@ -54,23 +60,6 @@ class ThirdPartAPI extends BaseListener
                             "幸运数字：{$res['number']}" . "\n" .
                             "幸运颜色：{$res['color']}" . "\n" .
                             "星座寄语：{$res['summary']}";
-                break;
-            case "tomorrow":
-                $all = $this->score2star($res['all']);
-                $health = $this->score2star($res['health']);
-                $love = $this->score2star($res['love']);
-                $money = $this->score2star($res['money']);
-                $work = $this->score2star($res['work']);
-                $response = "{$name}明日运势" ."\n" .
-                    "综合运势：{$all}" . "\n" .
-                    "爱情指数：{$love}" . "\n" .
-                    "财运指数：{$money}" . "\n" .
-                    "健康指数：{$health}" . "\n" .
-                    "工作指数：{$work}" . "\n" .
-                    "速配星座：{$res['QFriend']}" . "\n" .
-                    "幸运数字：{$res['number']}" . "\n" .
-                    "幸运颜色：{$res['color']}" . "\n" .
-                    "星座寄语：{$res['summary']}";
                 break;
             case "week":
                 $response = "{$name}本周运势" ."\n" .
@@ -112,12 +101,12 @@ class ThirdPartAPI extends BaseListener
             $star = "★";
             $empty_star = "☆";
             $score = round(substr($score, 0, -1) / 20);
-            for($i = 0; $i < 5; $i++){
+            $empty_score = 5-$score;
+            for($i = 0; $i < $score; $i++){
                 $str = $str . $star;
-                $score = $score - 1;
-                if($score < 0){
-                    $str = $str . $empty_star;
-                }
+            }
+            for($i = 0; $i < $empty_score; $i++){
+                $str = $str . $empty_star;
             }
             return $str;
         }
