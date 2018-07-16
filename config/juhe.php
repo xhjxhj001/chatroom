@@ -9,5 +9,6 @@
 return [
     "keys" => [
         "news" => env("JUHE_NEWS_KEY", "your-key"),
+        "constellation" => env("JUHE_CONSTELLATION_KEY", "your-key"),
     ]
 ];

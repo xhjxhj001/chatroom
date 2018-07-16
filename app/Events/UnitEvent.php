@@ -21,6 +21,7 @@ class UnitEvent
     const BOT_BOY = 5886; // 男机器人
     const BOT_GIRL = 6599; // 女机器人
     const BOT_COMMON = 5766; // 普通机器人
+    const BOT_CHAT = 5; // 闲聊机器人
 
     const VOICE_WOMAN = 0; // 女性声音
     const VOICE_MAN = 1; // 男性声音

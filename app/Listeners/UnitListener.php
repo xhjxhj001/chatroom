@@ -30,51 +30,15 @@ class UnitListener extends BaseListener
      */
     public function onSend(UnitEvent $event)
     {
-        $access_token = getenv("UNIT_TOKEN");
-        $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
-        $data = array(
-            "bot_id" => $event->bot_id,
-            "version" => "2.0",
-            "bot_session" => $event->bot_session,
-            "log_id" => time(),
-            "request" => array(
-                "bernard_level" => 1,
-                "client_session" => json_encode(array(
-                    "client_results" => "",
-                    "candidate_options" => [],
-                )),
-                "query" => $event->message,
-                "query_info" => array(
-                    "asr_candidates" => [],
-                    "source" => "KEYBOARD",
-                    "type" => "TEXT"
-                ),
-                "updates" => "",
-                "user_id" => $event->user_id,
-            ),
-        );
-        $body = json_encode($data);
-        $res = $this->request_post($url, $body);
-
+        $res = $this->sendToUnitBot($event->bot_id, $event->message, $event->user_id, $event->bot_session);
         $action_list = $res['result']['response']['action_list'];
         $answer_index = mt_rand(0, count($action_list) - 1);
-        $type = $action_list[$answer_index]['type'];
-        $reply = $action_list[$answer_index]['custom_reply'];
+        $type = $action_list[$answer_index]['type']; // 回复类型
+        $reply = $action_list[$answer_index]['custom_reply']; // 自定义回复函数
         if(!empty($reply)){
             $reply = json_decode($reply, true);
-            if($reply['func'] == "unit_search_weather"){
-                $slots = $res['result']['response']['schema']['slots'];
-                foreach ($slots as $slot){
-                    if($slot['name'] == "user_location"){
-                        $city = $slot['original_word'];
-                    }
-                    if($slot['name'] == "user_time"){
-                        $date_input = $slot['original_word'];
-                        $date_nor = $slot['normalized_word'];
-                    }
-                }
-                $result = $this->BaiduWeather($event, $city, $date_input, $date_nor);
-            }
+            $slots = $res['result']['response']['schema']['slots'];
+            $result = $this->checkFunc($reply['func'], $slots, $event);
         }else if($type == "guide" || $type == "failure"){
             $result = $this->sendToChatBot($event);
         }else{
@@ -92,34 +56,11 @@ class UnitListener extends BaseListener
     /**
      * 发送给闲聊机器人（无功能）
      * @param UnitEvent $event
+     * @return mixed
      */
     public function sendToChatBot(UnitEvent $event)
     {
-        $access_token = getenv("UNIT_TOKEN");
-        $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
-        $data = array(
-            "bot_id" => 5,
-            "version" => "2.0",
-            "bot_session" => "",
-            "log_id" => time(),
-            "request" => array(
-                "bernard_level" => 1,
-                "client_session" => json_encode(array(
-                    "client_results" => "",
-                    "candidate_options" => [],
-                )),
-                "query" => $event->message,
-                "query_info" => array(
-                    "asr_candidates" => [],
-                    "source" => "KEYBOARD",
-                    "type" => "TEXT"
-                ),
-                "updates" => "",
-                "user_id" => $event->user_id,
-            ),
-        );
-        $body = json_encode($data);
-        $res = $this->request_post($url, $body);
+        $res = $this->sendToUnitBot(UnitEvent::BOT_CHAT, $event->message, $event->user_id, "");
         $action_list = $res['result']['response']['action_list'];
         $answer_index = mt_rand(0, count($action_list) - 1);
         $answer = $action_list[$answer_index]['say'];
@@ -127,49 +68,51 @@ class UnitListener extends BaseListener
     }
 
     /**
-     * 查询天气
-     * @param $city
-     * @param int $date
-     * @return string
+     * 发送给UNIT机器人
+     * @param int $bot_id 机器人id
+     * @param string $query 发送内容
+     * @param string $user_id 用户id
+     * @param string $bot_session bot session
+     * @return array|bool
      */
-    protected function checkWeather(UnitEvent $event, $city, $date = 0)
+    public function sendToUnitBot($bot_id, $query, $user_id, $bot_session)
     {
-        $url = "https://www.sojson.com/open/api/weather/json.shtml?city=" . $city;
-        $res = $this->request_get($url);
-        if(isset($res['status'])){
-            $forecast = $res["data"]["forecast"][$date];
-            $response = $city . "今天" . $forecast['type'] . "\n" .
-                "当前温度：" . $res['data']['wendu'] . "\n" .
-                "最高气温：" . $forecast['high'] . "\n" .
-                "最低气温：" . $forecast['low'] . "\n" .
-                "空气质量：" . $forecast['aqi'] . "\n" .
-                "风向：" . $forecast['fx'] . "\n" .
-                "风力：" . $forecast['fl'] . "\n" .
-                "欢聚提醒你：" . $forecast['notice'];
-            if($event->response_mode){
-                $response = $city . "今天" . $forecast['type'] .
-                    "当前温度" . $res['data']['wendu'] .
-                    "最高气温" . $forecast['high'] .
-                    "最低气温" . $forecast['low'] .
-                    "空气质量" . $forecast['aqi'] .
-                    "风向" . $forecast['fx'] .
-                    "风力" . $forecast['fl']  .
-                    "欢聚提醒你" . $forecast['notice'];
-                $response = str_replace(' ', '', $response);
-            }
-        }else{
-            $response = "对不起，找不到 " .$city . "的天气情况";
-        }
-        return $response;
+        $access_token = getenv("UNIT_TOKEN");
+        $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
+        $data = array(
+            "bot_id" => $bot_id,
+            "version" => "2.0",
+            "bot_session" => $bot_session,
+            "log_id" => time(),
+            "request" => array(
+                "bernard_level" => 1,
+                "client_session" => json_encode(array(
+                    "client_results" => "",
+                    "candidate_options" => [],
+                )),
+                "query" => $query,
+                "query_info" => array(
+                    "asr_candidates" => [],
+                    "source" => "KEYBOARD",
+                    "type" => "TEXT"
+                ),
+                "updates" => "",
+                "user_id" => $user_id,
+            ),
+        );
+        $body = json_encode($data);
+        $res = $this->request_post($url, $body);
+        return $res;
     }
 
     /**
      * 查询天气
-     * @param $city
-     * @param int $date
-     * @return string
+     * @param string $city 城市
+     * @param string $date_input 用户输入日期
+     * @param string $date_nor unit 识别日期
+     * @return mixed|string
      */
-    protected function BaiduWeather(UnitEvent $event, $city, $date_input, $date_nor)
+    protected function BaiduWeather($city, $date_input, $date_nor, $response_mode)
     {
         $oneday = 60*60*24;
         $today = strtotime(date("Y-m-d", time()));
@@ -191,7 +134,7 @@ class UnitListener extends BaseListener
                 $date_input . $forecast['weather'] . "\n" .
                 "温度：" . $forecast['temperature'] . "\n" .
                 "风力：" . $forecast['wind'];
-            if($event->response_mode){
+            if($response_mode){
                 $response = $city . "当前温度" . $current_tem . ";" .
                     $date_input . $forecast['weather'] . ";" .
                     "温度" . $forecast['temperature'] . ";" .
@@ -241,6 +184,39 @@ class UnitListener extends BaseListener
         $path = storage_path("app/public/{$user_id}_audio.mp3");
         $res = $app->media->uploadVoice($path);
         return $res["media_id"];
+    }
+
+    protected function checkFunc(UnitEvent $event, $func, $slots)
+    {
+        $result = "查询失败";
+        switch ($func)
+        {
+            case "unit_search_weather":
+                foreach ($slots as $slot){
+                    if($slot['name'] == "user_location"){
+                        $city = $slot['original_word'];
+                    }
+                    if($slot['name'] == "user_time"){
+                        $date_input = $slot['original_word'];
+                        $date_nor = $slot['normalized_word'];
+                    }
+                }
+                $result = $this->BaiduWeather($city, $date_input, $date_nor, $event->response_mode);
+                break;
+            case "unit_search_constellation":
+                foreach ($slots as $slot){
+                    if($slot['name'] == "user_constellation"){
+                        $name = $slot['normalized_word'];
+                    }
+                    if($slot['name'] == "user_time"){
+                        $date = $slot['original_word'];
+                    }
+                }
+                $result = ThirdPartAPI::
+                break;
+        }
+        return $result;
+
     }
 
 }
