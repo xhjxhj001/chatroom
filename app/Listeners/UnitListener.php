@@ -187,7 +187,14 @@ class UnitListener extends BaseListener
         return $res["media_id"];
     }
 
-    protected function checkFunc(UnitEvent $event, $func, $slots)
+    /**
+     * 检查自定义功能
+     * @param $func
+     * @param $slots
+     * @param UnitEvent $event
+     * @return mixed|string
+     */
+    protected function checkFunc($func, $slots, UnitEvent $event)
     {
         $result = "查询失败";
         switch ($func)
