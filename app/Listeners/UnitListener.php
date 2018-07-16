@@ -110,6 +110,7 @@ class UnitListener extends BaseListener
      * @param string $city 城市
      * @param string $date_input 用户输入日期
      * @param string $date_nor unit 识别日期
+     * @param int $response_mode 回复方式
      * @return mixed|string
      */
     protected function BaiduWeather($city, $date_input, $date_nor, $response_mode)
@@ -210,13 +211,34 @@ class UnitListener extends BaseListener
                     }
                     if($slot['name'] == "user_time"){
                         $date = $slot['original_word'];
+                        $date = $this->checkDate($date);
                     }
                 }
-                $result = ThirdPartAPI::
+                $api = new ThirdPartAPI();
+                $result = $api->checkConstellation($name, $date);
                 break;
         }
         return $result;
 
+    }
+
+    private function checkDate($date)
+    {
+        if($date == "今天"){
+            return "today";
+        }
+        if($date == "明天"){
+            return "tomorrow";
+        }
+        if(strpos($date, "周") !== false){
+            return "week";
+        }
+        if(strpos($date, "月") !== false){
+            return "month";
+        }
+        if(strpos($date, "年") !== false){
+            return "year";
+        }
     }
 
 }
