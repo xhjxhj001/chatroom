@@ -29,6 +29,12 @@ class ThirdPartAPI extends BaseListener
         //
     }
 
+    /**
+     * 星座查询API
+     * @param $name
+     * @param $type
+     * @return string
+     */
     public function checkConstellation($name, $type)
     {
         $key = config("juhe.keys.constellation");
@@ -123,4 +129,11 @@ class ThirdPartAPI extends BaseListener
             return $str;
         }
     }
+
+    public function buyMovieTickets($cinemaId)
+    {
+        $url = "https://m.maoyan.com/shows/{$cinemaId}?from=mmweb";
+        return $url;
+    }
+
 }

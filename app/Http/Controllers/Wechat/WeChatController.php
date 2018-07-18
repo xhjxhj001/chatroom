@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Wechat;
 
 use App\Events\UnitEvent;
 use App\Http\Controllers\Controller;
+use App\Listeners\ThirdPartAPI;
 use App\Utils\RedisKey;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -64,9 +65,9 @@ class WeChatController extends Controller
     protected function dispatchUnitEvent($data, $action)
     {
         // 检查 设置模式
-        $voice_set = $this->setVoiceMode($data['user_id'], $data['message']);
-        if($voice_set){
-            return $voice_set;
+        $set = $this->checkSet($data['user_id'], $data['message']);
+        if($set){
+            return $set;
         }
         // 新建事件
         $unitEvent = new UnitEvent($data, $action);
@@ -80,12 +81,17 @@ class WeChatController extends Controller
      * @param $message
      * @return bool|string
      */
-    protected function setVoiceMode($openId, $message)
+    protected function checkSet($openId, $message)
     {
         $key = RedisKey::UNIT_BOT_MODE_SET . $openId;
         $key_voice_set = RedisKey::UNIT_BOT_VOICE_SET . $openId;
         $key_chat_mode = RedisKey::UNIT_BOT_CHAT_SET . $openId;
         $message = trim($message, "。");
+        if($message == "我想看电影了"){
+            $listener = new ThirdPartAPI();
+            $url = $listener->buyMovieTickets(72);
+            return $url;
+        }
         if($message == "开启怼人模式"){
             Redis::set($key_chat_mode, 1);
             return "开启怼人模式成功";
