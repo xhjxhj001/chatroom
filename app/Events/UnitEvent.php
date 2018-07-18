@@ -85,6 +85,7 @@ class UnitEvent
      */
     protected function checkUser($user_id)
     {
+        $key_chat_mode = RedisKey::UNIT_BOT_CHAT_SET . $user_id;
         $key = RedisKey::UNIT_BOT_VOICE_SET . $user_id;
         switch ($user_id)
         {
@@ -99,6 +100,9 @@ class UnitEvent
             default:
                 $this->bot_id = self::BOT_COMMON;
                 break;
+        }
+        if(EasyRedis::get($key_chat_mode)){
+            $this->bot_id = self::BOT_CHAT;
         }
     }
 

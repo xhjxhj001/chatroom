@@ -84,19 +84,29 @@ class WeChatController extends Controller
     {
         $key = RedisKey::UNIT_BOT_MODE_SET . $openId;
         $key_voice_set = RedisKey::UNIT_BOT_VOICE_SET . $openId;
-        if($message == "设置语音回复" || $message == "设置语音回复。"){
+        $key_chat_mode = RedisKey::UNIT_BOT_CHAT_SET . $openId;
+        $message = trim($message, "。");
+        if($message == "开启怼人模式"){
+            Redis::set($key_chat_mode, 1);
+            return "开启怼人模式成功";
+        }
+        if($message == "关闭怼人模式"){
+            Redis::set($key_chat_mode, 0);
+            return "关闭怼人模式成功";
+        }
+        if($message == "设置语音回复"){
             Redis::set($key, 1);
             return "设置语音回复成功";
         }
-        if($message == "设置文字回复" || $message == "设置文字回复。"){
+        if($message == "设置文字回复"){
             Redis::set($key, 0);
             return "设置文字回复成功";
         }
-        if($message == "设置女生回复" || $message == "设置女生回复。"){
+        if($message == "设置女生回复"){
             Redis::set($key_voice_set, UnitEvent::VOICE_WOMAN);
             return "设置女生回复成功";
         }
-        if($message == "设置男生回复" || $message == "设置男生回复。"){
+        if($message == "设置男生回复"){
             Redis::set($key_voice_set, UnitEvent::VOICE_MAN);
             return "设置男生回复成功";
         }
