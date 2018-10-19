@@ -37,6 +37,37 @@ class IndexController extends Controller
         }
     }
 
+    public function getPercent()
+    {  	
+	$key = "testvote:id:";
+	$votes1 = Redis::get($key . 1);
+	$votes2 = Redis::get($key . 2);
+	$votes1 = intval($votes1);
+	$votes2 = intval($votes2);
+	if($votes1 == $votes2 && $votes1 == 0){
+	    $data = array(
+            "vote1" => 0,
+            "vote2" => 0,
+            "percent" => 50,
+            );
+	    return $this->success($data);
+	}
+	$res = round($votes1 / ($votes1+$votes2), 4) * 100;
+	$data = array(
+	    "vote1" => $votes1,
+	    "vote2" => $votes2,
+	    "percent" => $res,
+	);
+	return $this->success($data);
+    }   
+
+    public function vote($id)
+    {
+	$key = "testvote:id:" . $id;
+	$res = Redis::incr($key);
+	return $this->getPercent();
+    }
+
     /**
      * 登录接口
      * @param Request $request

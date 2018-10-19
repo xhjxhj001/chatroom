@@ -95,7 +95,7 @@ class UnitEvent
                 break;
             case "oLIAK0gFuUw_yGsUdBxPxiXmJKeo":
                 Redis::set($key, self::VOICE_WOMAN);
-                $this->bot_id = self::BOT_GIRL;
+                $this->bot_id = self::BOT_BOY;
                 break;
             default:
                 $this->bot_id = self::BOT_COMMON;
