@@ -87,6 +87,14 @@ class WeChatController extends Controller
         $key_voice_set = RedisKey::UNIT_BOT_VOICE_SET . $openId;
         $key_chat_mode = RedisKey::UNIT_BOT_CHAT_SET . $openId;
         $message = trim($message, "。");
+	if($message == "开灯"){
+	    Redis::set('tmp', 'lightup');
+	    return "好的，灯已打开";
+	}
+	if($message == "关灯"){
+            Redis::set('tmp', 'lightdown');
+	    return "好的，灯已关闭";
+        }
         if($message == "我想看电影了"){
             $listener = new ThirdPartAPI();
             $url = $listener->buyMovieTickets(72);

@@ -28,13 +28,14 @@ class IndexController extends Controller
      */
     public function index()
     {
+	
         $data = Redis::get('tmp');
         if(!empty($data)){
+	    Redis::del('tmp');
             return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $data));
-        }else{
-            $data = Redis::set('tmp', 'xlp');
-            return json_encode(array("errno" => 0, "errmsg" => "success", "data" => 'insert to redis success'));
-        }
+	}else{
+            return json_encode(array("errno" => 0, "errmsg" => "fail", "data" => $data));
+	}
     }
 
     public function getPercent()
