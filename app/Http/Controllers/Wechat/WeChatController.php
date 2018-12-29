@@ -88,12 +88,20 @@ class WeChatController extends Controller
         $key_chat_mode = RedisKey::UNIT_BOT_CHAT_SET . $openId;
         $message = trim($message, "。");
 	if($message == "开灯"){
-	    Redis::set('tmp', 'lightup');
+	    Redis::set('tmp', 'light_up');
 	    return "好的，灯已打开";
 	}
 	if($message == "关灯"){
-            Redis::set('tmp', 'lightdown');
+            Redis::set('tmp', 'light_down');
 	    return "好的，灯已关闭";
+        }
+	if($message == "打开呼吸灯模式"){
+            Redis::set('tmp', 'light_breath');
+	    return "好的，已开启呼吸灯模式";
+        }
+	if($message == "打开闪烁灯模式"){
+            Redis::set('tmp', 'light_bling');
+	    return "好的，已开启闪烁灯模式";
         }
         if($message == "我想看电影了"){
             $listener = new ThirdPartAPI();

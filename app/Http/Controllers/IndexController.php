@@ -34,7 +34,7 @@ class IndexController extends Controller
 	    Redis::del('tmp');
             return json_encode(array("errno" => 0, "errmsg" => "success", "data" => $data));
 	}else{
-            return json_encode(array("errno" => 0, "errmsg" => "fail", "data" => $data));
+            return json_encode(array("errno" => 0, "errmsg" => "fail", "data" => ''));
 	}
     }
 

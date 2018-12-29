@@ -15,7 +15,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 Route::any('/wechat', 'Wechat\WeChatController@serve');
-Route::get('/test', 'IndexController@index');
+Route::get('/mq', 'IndexController@index');
 Route::get('/vote', 'IndexController@getPercent');
 Route::get('/vote/{id}', 'IndexController@vote');
 Route::get('/order', 'OrderController@getorder');
