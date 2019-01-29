@@ -15,8 +15,7 @@ class UnitListener extends BaseListener
      */
     public function handle(UnitEvent $event)
     {
-        switch ($event->action)
-        {
+        switch ($event->action) {
             case UnitEvent::SEND:
                 $this->onSend($event);
                 break;
@@ -37,18 +36,18 @@ class UnitListener extends BaseListener
         $answer_index = mt_rand(0, count($action_list) - 1);
         $type = $action_list[$answer_index]['type']; // 回复类型
         $reply = $action_list[$answer_index]['custom_reply']; // 自定义回复函数
-        if(!empty($reply)){
+        if (!empty($reply)) {
             $reply = json_decode($reply, true);
             $slots = $res['result']['response']['schema']['slots'];
             $result = $this->checkFunc($reply['func'], $slots, $event);
-        }else if($type == "guide" || $type == "failure"){
+        } else if ($type == "guide" || $type == "failure") {
             $result = $this->sendToChatBot($event);
-        }else{
+        } else {
             $result = $action_list[$answer_index]['say'];
         }
         $event->setBotSession($event->user_id, $res['result']['bot_session']);
         // 如果开启语音回复模式，则转换成语音
-        if($event->response_mode){
+        if ($event->response_mode) {
             $result = $this->trans2voice($result, $event->voice_mode, $event->user_id);
         }
         $event->setResult($result);
@@ -107,6 +106,20 @@ class UnitListener extends BaseListener
         return $res;
     }
 
+    public function getCouplets($keywords)
+    {
+        $access_token = Redis::get(RedisKey::BAIDU_UNIT_TOKEN);
+        $url = "https://aip.baidubce.com/rpc/2.0/nlp/v1/couplets?access_token=" . $access_token;
+        $index = mt_rand(0,10);
+        $data = array(
+            "text" => $keywords,
+            "index" => $index,
+        );
+        $body = json_encode($data);
+        $res = $this->request_post($url, $body);
+        return $res['couplets']['center'];
+    }
+
     /**
      * 查询天气
      * @param string $city 城市
@@ -117,17 +130,17 @@ class UnitListener extends BaseListener
      */
     protected function BaiduWeather($city, $date_input, $date_nor, $response_mode)
     {
-        $oneday = 60*60*24;
+        $oneday = 60 * 60 * 24;
         $today = strtotime(date("Y-m-d", time()));
         $time = strtotime($date_nor);
-        $num = ($time - $today)/$oneday;
-        if($num < 0 || $num > 3) {
+        $num = ($time - $today) / $oneday;
+        if ($num < 0 || $num > 3) {
             return "对不起，无法查询{$city}{$date_input}的天气情况";
         }
         $ak = getenv("BAIDU_AK");
         $url = "http://api.map.baidu.com/telematics/v3/weather?location=$city&output=json&ak=$ak";
         $res = $this->request_get($url);
-        if($res['error'] == 0){
+        if ($res['error'] == 0) {
             $forecast = $res["results"][0]["weather_data"][$num];
             $current_tem = $res["results"][0]["weather_data"][0]["date"];
             $current_tem = explode("：", $current_tem);
@@ -137,14 +150,14 @@ class UnitListener extends BaseListener
                 $date_input . $forecast['weather'] . "\n" .
                 "温度：" . $forecast['temperature'] . "\n" .
                 "风力：" . $forecast['wind'];
-            if($response_mode){
+            if ($response_mode) {
                 $response = $city . "当前温度" . $current_tem . ";" .
                     $date_input . $forecast['weather'] . ";" .
                     "温度" . $forecast['temperature'] . ";" .
                     "风力" . $forecast['wind'];
                 $response = str_replace(' ', '', $response);
             }
-        }else{
+        } else {
             $response = "对不起，找不到{$city}的天气情况";
         }
         return $response;
@@ -199,14 +212,13 @@ class UnitListener extends BaseListener
     protected function checkFunc($func, $slots, UnitEvent $event)
     {
         $result = "查询失败";
-        switch ($func)
-        {
+        switch ($func) {
             case "unit_search_weather":
-                foreach ($slots as $slot){
-                    if($slot['name'] == "user_location"){
+                foreach ($slots as $slot) {
+                    if ($slot['name'] == "user_location") {
                         $city = $slot['original_word'];
                     }
-                    if($slot['name'] == "user_time"){
+                    if ($slot['name'] == "user_time") {
                         $date_input = $slot['original_word'];
                         $date_nor = $slot['normalized_word'];
                     }
@@ -214,11 +226,11 @@ class UnitListener extends BaseListener
                 $result = $this->BaiduWeather($city, $date_input, $date_nor, $event->response_mode);
                 break;
             case "unit_search_constellation":
-                foreach ($slots as $slot){
-                    if($slot['name'] == "user_constellation"){
+                foreach ($slots as $slot) {
+                    if ($slot['name'] == "user_constellation") {
                         $name = $slot['normalized_word'];
                     }
-                    if($slot['name'] == "user_time"){
+                    if ($slot['name'] == "user_time") {
                         $date = $slot['original_word'];
                         $date = $this->checkDate($date);
                     }
@@ -226,19 +238,25 @@ class UnitListener extends BaseListener
                 $api = new ThirdPartAPI();
                 $result = $api->checkConstellation($name, $date);
                 break;
-	    case "unit_power_control":
-		foreach ($slots as $slot){
-                    if($slot['name'] == "user_power_name"){
+            case "unit_power_control":
+                foreach ($slots as $slot) {
+                    if ($slot['name'] == "user_power_name") {
                         $name = $slot['normalized_word'];
                     }
-                    if($slot['name'] == "user_power_action"){
+                    if ($slot['name'] == "user_power_action") {
                         $action = $slot['original_word'];
                     }
                 }
-		$api = new ThirdPartAPI();
-		//Log::info("[power_control]" . $action.$name);
-		$result = $api->powerControl($action, $name);
-		break;
+                $api = new ThirdPartAPI();
+                //Log::info("[power_control]" . $action.$name);
+                $result = $api->powerControl($action, $name);
+                break;
+            case "unit_search_couplets":
+                Redis::set(RedisKey::START_COUPLETS_MODE . $event->user_id, 1);
+                $result = "请输入关键词，例如：喜气洋洋，万事如意，恭喜发财，等等关键词，可以大胆尝试新鲜词汇，看看能不能难倒我，^_^";
+                break;
+            default:
+                break;
         }
         return $result;
 
@@ -246,19 +264,19 @@ class UnitListener extends BaseListener
 
     private function checkDate($date)
     {
-        if($date == "今天"){
+        if ($date == "今天") {
             return "today";
         }
-        if($date == "明天"){
+        if ($date == "明天") {
             return "tomorrow";
         }
-        if(strpos($date, "周") !== false){
+        if (strpos($date, "周") !== false) {
             return "week";
         }
-        if(strpos($date, "月") !== false){
+        if (strpos($date, "月") !== false) {
             return "month";
         }
-        if(strpos($date, "年") !== false){
+        if (strpos($date, "年") !== false) {
             return "year";
         }
     }

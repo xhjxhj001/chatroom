@@ -23,6 +23,11 @@ class RedisKey {
     const UNIT_BOT_VOICE_SET = "unit_bot_voice_set:openid:";
 
     /**
+     * 开启春联创作
+     */
+    const START_COUPLETS_MODE = "baidu_couplets_mode:openid:";
+
+    /**
      * 百度 unit token
      */
     const BAIDU_UNIT_TOKEN = "baidu_unit_token";
