@@ -3,8 +3,10 @@
 namespace App\Listeners;
 
 use App\Events\UnitEvent;
+use App\Utils\RedisKey;
 use EasyWeChat\Kernel\Messages\Voice;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class UnitListener extends BaseListener
 {
@@ -77,7 +79,7 @@ class UnitListener extends BaseListener
      */
     public function sendToUnitBot($bot_id, $query, $user_id, $bot_session)
     {
-        $access_token = getenv("UNIT_TOKEN");
+        $access_token = Redis::get(RedisKey::BAIDU_UNIT_TOKEN);
         $url = "https://aip.baidubce.com/rpc/2.0/unit/bot/chat?access_token=" . $access_token;
         $data = array(
             "bot_id" => $bot_id,
@@ -168,7 +170,7 @@ class UnitListener extends BaseListener
      */
     protected function text2audio($text, $voice, $user_id)
     {
-        $tok = getenv("VOICE_TOKEN");
+        $tok = Redis::get(RedisKey::BAIDU_VOICE_TOKEN);
         $url = "https://tsn.baidu.com/text2audio?tex=$text&lan=zh&cuid=***&ctp=1&tok=$tok&per=" . $voice;
         $this->request_get($url, true, storage_path("app/public/{$user_id}_audio.mp3"));
         $mediaId = $this->uploadMedia($user_id);

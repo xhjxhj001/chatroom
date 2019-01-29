@@ -13,7 +13,7 @@ class BaseListener
      * @param string $param 请求参数
      * @return array|bool $data 返回结果
      **/
-    protected function request_post($url = '', $param = '')
+    public function request_post($url = '', $param = '')
     {
         if (empty($url) || empty($param)) {
             return false;
@@ -41,7 +41,7 @@ class BaseListener
      * @param string $filename 文件名
      * @return bool|mixed 返回结果
      */
-    protected function request_get($url = '', $is_file = false , $filename = "")
+    public function request_get($url = '', $is_file = false , $filename = "")
     {
         if (empty($url)){
             return false;

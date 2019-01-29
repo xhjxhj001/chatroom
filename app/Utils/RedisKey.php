@@ -22,4 +22,14 @@ class RedisKey {
     // 用户机器人 语音设置
     const UNIT_BOT_VOICE_SET = "unit_bot_voice_set:openid:";
 
+    /**
+     * 百度 unit token
+     */
+    const BAIDU_UNIT_TOKEN = "baidu_unit_token";
+
+    /**
+     * 百度 语音 token
+     */
+    const BAIDU_VOICE_TOKEN = "baidu_voice_token";
+
 }
