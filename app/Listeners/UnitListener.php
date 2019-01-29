@@ -110,14 +110,22 @@ class UnitListener extends BaseListener
     {
         $access_token = Redis::get(RedisKey::BAIDU_UNIT_TOKEN);
         $url = "https://aip.baidubce.com/rpc/2.0/nlp/v1/couplets?access_token=" . $access_token;
-        $index = mt_rand(0,10);
+        $index = mt_rand(0, 10);
         $data = array(
             "text" => $keywords,
             "index" => $index,
         );
         $body = json_encode($data);
         $res = $this->request_post($url, $body);
-        return $res['couplets']['center'];
+        if (isset($res['couplets'])) {
+            $message = "作出来啦，请看：\n" .
+                "上联：" . $res['couplets']['first'] . "\n" .
+                "下联：" . $res['couplets']['second'] . "\n" .
+                "横批：" . $res['couplets']['center'];
+            return $message;
+        } else {
+            return "哎呀，还真作不出来";
+        }
     }
 
     /**
