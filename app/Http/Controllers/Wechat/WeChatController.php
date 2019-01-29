@@ -52,7 +52,8 @@ class WeChatController extends Controller
                             "技能2：星座查询（娱乐为主，切勿轻信）：可查询12星座当天，明天，本周，月，年的运势；试着说：巨蟹座今天运势 \n" .
                             "技能3：闲聊（默认）：不用我说啦，想说啥直接和我聊天就好，虽然回答的有点智障，毕竟我是机器人啊 \n" .
                             "技能4：怼人模式：慎用！，如果和怼人模式的我聊天说了不好听的，概不承认 XD；开启方式：输入：开启怼人模式，关闭方式：关闭怼人模式 \n" .
-                            "技能5：AI春联：输入一个主题词，我便会帮你作出一个文采飞扬的对联，还有横批，春节拜年不重样；试着说：我要作春联 \n";
+                            "技能5：AI春联创作模式：输入一个主题词，我便会帮你作出一个文采飞扬的对联，还有横批，春节拜年不重样；试着说：我要作春联体验吧，如需退出，则输入“退出”即可 \n" .
+                            "查看此帮助信息：在闲聊模式时输入：查看帮助";
                         break;
                 }
                 return $this->answer;
@@ -96,6 +97,10 @@ class WeChatController extends Controller
         $key_chat_mode = RedisKey::UNIT_BOT_CHAT_SET . $openId;
         $message = trim($message, "。");
         if (Redis::get(RedisKey::START_COUPLETS_MODE . $openId) == 1){
+            if($message == "退出"){
+                Redis::del(RedisKey::START_COUPLETS_MODE . $openId);
+                return "已退出春联创作模式";
+            }
             $listener = new UnitListener();
             $res = $listener->getCouplets($message);
             return $res;
@@ -117,7 +122,7 @@ class WeChatController extends Controller
             Redis::set($key_chat_mode, 1);
             return "开启怼人模式成功";
         }
-        if ($message == "关闭怼人模式") {
+        if ($message == "关闭怼人模式" || $message == "退出怼人模式") {
             Redis::set($key_chat_mode, 0);
             return "关闭怼人模式成功";
         }
