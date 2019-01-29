@@ -261,7 +261,7 @@ class UnitListener extends BaseListener
                 break;
             case "unit_search_couplets":
                 Redis::set(RedisKey::START_COUPLETS_MODE . $event->user_id, 1);
-                $result = "请输入关键词，例如：喜气洋洋，万事如意，恭喜发财，等等关键词，可以大胆尝试新鲜词汇，看看能不能难倒我，^_^";
+                $result = "请输入关键词，例如：金猪贺岁，大年，拜年，好运，生意，财运，手机等等关键词，五个字以内即可，可以大胆尝试新鲜词汇，看看能不能难倒我，^_^";
                 break;
             default:
                 break;
