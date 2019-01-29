@@ -5,9 +5,22 @@ namespace App\Listeners;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class ThirdPartAPI extends BaseListener
 {
+    protected $power_action_list = array(
+	"打开" => "power_on",
+	"开开" => "power_on",
+	"关闭" => "power_off",
+	"关上" => "power_off"
+    );
+
+    protected $power_name_list = array(
+        "空调" => "air_condition",
+        "床头灯" => "bed_lamp_1"
+    );
+
     /**
      * Create the event listener.
      *
@@ -27,6 +40,15 @@ class ThirdPartAPI extends BaseListener
     public function handle($event)
     {
         //
+    }
+
+    public function powerControl($action, $name)
+    {
+	$action_value = $this->power_action_list[$action];
+	Log::info("[power_control]" . $action_value . $name);
+	$name_value = $this->power_name_list[$name];
+	Redis::set('tmp', $action_value . '_' . $name_value);
+	return $name . "已" . $action;
     }
 
     /**

@@ -224,6 +224,19 @@ class UnitListener extends BaseListener
                 $api = new ThirdPartAPI();
                 $result = $api->checkConstellation($name, $date);
                 break;
+	    case "unit_power_control":
+		foreach ($slots as $slot){
+                    if($slot['name'] == "user_power_name"){
+                        $name = $slot['normalized_word'];
+                    }
+                    if($slot['name'] == "user_power_action"){
+                        $action = $slot['original_word'];
+                    }
+                }
+		$api = new ThirdPartAPI();
+		//Log::info("[power_control]" . $action.$name);
+		$result = $api->powerControl($action, $name);
+		break;
         }
         return $result;
 

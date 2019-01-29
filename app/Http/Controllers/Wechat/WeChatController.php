@@ -95,14 +95,6 @@ class WeChatController extends Controller
             Redis::set('tmp', 'light_down');
 	    return "好的，灯已关闭";
         }
-	if($message == "打开呼吸灯模式"){
-            Redis::set('tmp', 'light_breath');
-	    return "好的，已开启呼吸灯模式";
-        }
-	if($message == "打开闪烁灯模式"){
-            Redis::set('tmp', 'light_bling');
-	    return "好的，已开启闪烁灯模式";
-        }
         if($message == "我想看电影了"){
             $listener = new ThirdPartAPI();
             $url = $listener->buyMovieTickets(72);
