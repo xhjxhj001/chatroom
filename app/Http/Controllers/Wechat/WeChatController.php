@@ -98,7 +98,7 @@ class WeChatController extends Controller
         $key_voice_set = RedisKey::UNIT_BOT_VOICE_SET . $openId;
         $key_chat_mode = RedisKey::UNIT_BOT_CHAT_SET . $openId;
         $message = trim($message, "。");
-        if($message == "帮助" || "查看帮助"){
+        if($message == "帮助" || $message == "查看帮助"){
             return $this->help;
         }
         if (Redis::get(RedisKey::START_COUPLETS_MODE . $openId) == 1){
