@@ -46,10 +46,6 @@ class UnitListener extends BaseListener
             $result = $action_list[$answer_index]['say'];
         }
         $event->setBotSession($event->user_id, $res['result']['bot_session']);
-        // 如果开启语音回复模式，则转换成语音
-        if ($event->response_mode) {
-            $result = $this->trans2voice($result, $event->voice_mode, $event->user_id);
-        }
         $event->setResult($result);
 
     }
@@ -122,10 +118,11 @@ class UnitListener extends BaseListener
                 "上联：" . $res['couplets']['first'] . "\n" .
                 "下联：" . $res['couplets']['second'] . "\n" .
                 "横批：" . $res['couplets']['center'];
-            return $message;
+            $result =  $message;
         } else {
-            return "哎呀，还真作不出来";
+            $result = "哎呀，还真作不出来";
         }
+        return $result;
     }
 
     /**
@@ -177,7 +174,7 @@ class UnitListener extends BaseListener
      * @param $voice
      * @return Voice
      */
-    protected function trans2voice($text, $voice, $user_id)
+    public function trans2voice($text, $voice, $user_id)
     {
         $mediaId = $this->text2audio($text, $voice, $user_id);
         return new Voice($mediaId);

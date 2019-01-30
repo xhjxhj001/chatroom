@@ -78,12 +78,19 @@ class WeChatController extends Controller
         // 检查 设置模式
         $set = $this->checkSet($data['user_id'], $data['message']);
         if ($set) {
-            return $set;
+            $result = $set;
+        }else{
+            // 新建事件
+            $unitEvent = new UnitEvent($data, $action);
+            event($unitEvent);
+            $result = $unitEvent->result;
         }
-        // 新建事件
-        $unitEvent = new UnitEvent($data, $action);
-        event($unitEvent);
-        return $unitEvent->result;
+        // 如果开启语音回复模式，则转换成语音
+        $response_mode = UnitEvent::getResponseMode($data['user_id']);
+        if($response_mode['response_mode'] == 1){
+            $result = UnitEvent::getVoiceMessage($result, $response_mode['voice_mode'], $data['user_id']);
+        }
+        return $result;
     }
 
     /**

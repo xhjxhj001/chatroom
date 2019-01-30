@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Listeners\UnitListener;
 use App\Utils\EasyRedis;
 use App\Utils\RedisKey;
 use Illuminate\Broadcasting\Channel;
@@ -95,7 +96,7 @@ class UnitEvent
                 break;
             case "oLIAK0gFuUw_yGsUdBxPxiXmJKeo":
                 Redis::set($key, self::VOICE_WOMAN);
-                $this->bot_id = self::BOT_BOY;
+                $this->bot_id = self::BOT_COMMON;
                 break;
             default:
                 $this->bot_id = self::BOT_COMMON;
@@ -103,6 +104,45 @@ class UnitEvent
         }
         if(EasyRedis::get($key_chat_mode)){
             $this->bot_id = self::BOT_CHAT;
+        }
+    }
+
+    /**
+     * 获取回复模式
+     * @param $user_id
+     * @return array
+     */
+    static public function getResponseMode($user_id)
+    {
+        $res = array(
+            'response_mode' => 0,
+            'voice_mode' => self::VOICE_WOMAN
+        );
+        //获取 bot 回复模式
+        $response_mode = EasyRedis::get(RedisKey::UNIT_BOT_MODE_SET . $user_id);
+        $res['response_mode'] = empty($response_mode) ? 0 : $response_mode ;
+        if($res['response_mode'] != 0){
+            $voice_mode = EasyRedis::get(RedisKey::UNIT_BOT_VOICE_SET . $user_id);
+            $res['voice_mode'] = empty($voice_mode) ? self::VOICE_WOMAN : $voice_mode;
+        }
+        return $res;
+    }
+
+    /**
+     * 获取语音消息
+     * @param $text
+     * @param $voice
+     * @param $user_id
+     * @return \EasyWeChat\Kernel\Messages\Voice|string
+     */
+    static public function getVoiceMessage($text, $voice, $user_id)
+    {
+        $listener = new UnitListener();
+        $res = $listener->trans2voice($text, $voice, $user_id);
+        if($res){
+            return $res;
+        }else{
+            return '';
         }
     }
 
