@@ -88,6 +88,8 @@ class WeChatController extends Controller
         // 如果开启语音回复模式，则转换成语音
         $response_mode = UnitEvent::getResponseMode($data['user_id']);
         if($response_mode['response_mode'] == 1){
+            $result = str_replace("\n", "；", $result);
+            $result = str_replace(" ", "", $result);
             $result = UnitEvent::getVoiceMessage($result, $response_mode['voice_mode'], $data['user_id']);
         }
         return $result;
@@ -105,30 +107,10 @@ class WeChatController extends Controller
         $key_voice_set = RedisKey::UNIT_BOT_VOICE_SET . $openId;
         $key_chat_mode = RedisKey::UNIT_BOT_CHAT_SET . $openId;
         $message = trim($message, "。");
+
+        // 模式设置
         if($message == "帮助" || $message == "查看帮助"){
             return $this->help;
-        }
-        if (Redis::get(RedisKey::START_COUPLETS_MODE . $openId) == 1){
-            if($message == "退出"){
-                Redis::del(RedisKey::START_COUPLETS_MODE . $openId);
-                return "已退出春联创作模式";
-            }
-            $listener = new UnitListener();
-            $res = $listener->getCouplets($message);
-            return $res;
-        }
-        if ($message == "开灯") {
-            Redis::set('tmp', 'light_up');
-            return "好的，灯已打开";
-        }
-        if ($message == "关灯") {
-            Redis::set('tmp', 'light_down');
-            return "好的，灯已关闭";
-        }
-        if ($message == "我想看电影了") {
-            $listener = new ThirdPartAPI();
-            $url = $listener->buyMovieTickets(72);
-            return $url;
         }
         if ($message == "开启怼人模式") {
             Redis::set($key_chat_mode, 1);
@@ -153,6 +135,30 @@ class WeChatController extends Controller
         if ($message == "设置男生回复") {
             Redis::set($key_voice_set, UnitEvent::VOICE_MAN);
             return "设置男生回复成功";
+        }
+
+        // 特殊技能
+        if (Redis::get(RedisKey::START_COUPLETS_MODE . $openId) == 1){
+            if($message == "退出"){
+                Redis::del(RedisKey::START_COUPLETS_MODE . $openId);
+                return "已退出春联创作模式";
+            }
+            $listener = new UnitListener();
+            $res = $listener->getCouplets($message);
+            return $res;
+        }
+        if ($message == "开灯") {
+            Redis::set('tmp', 'light_up');
+            return "好的，灯已打开";
+        }
+        if ($message == "关灯") {
+            Redis::set('tmp', 'light_down');
+            return "好的，灯已关闭";
+        }
+        if ($message == "我想看电影了") {
+            $listener = new ThirdPartAPI();
+            $url = $listener->buyMovieTickets(72);
+            return $url;
         }
         return false;
     }

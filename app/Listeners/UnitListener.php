@@ -133,7 +133,7 @@ class UnitListener extends BaseListener
      * @param int $response_mode 回复方式
      * @return mixed|string
      */
-    protected function BaiduWeather($city, $date_input, $date_nor, $response_mode)
+    protected function BaiduWeather($city, $date_input, $date_nor)
     {
         $oneday = 60 * 60 * 24;
         $today = strtotime(date("Y-m-d", time()));
@@ -155,13 +155,6 @@ class UnitListener extends BaseListener
                 $date_input . $forecast['weather'] . "\n" .
                 "温度：" . $forecast['temperature'] . "\n" .
                 "风力：" . $forecast['wind'];
-            if ($response_mode) {
-                $response = $city . "当前温度" . $current_tem . ";" .
-                    $date_input . $forecast['weather'] . ";" .
-                    "温度" . $forecast['temperature'] . ";" .
-                    "风力" . $forecast['wind'];
-                $response = str_replace(' ', '', $response);
-            }
         } else {
             $response = "对不起，找不到{$city}的天气情况";
         }
@@ -228,7 +221,7 @@ class UnitListener extends BaseListener
                         $date_nor = $slot['normalized_word'];
                     }
                 }
-                $result = $this->BaiduWeather($city, $date_input, $date_nor, $event->response_mode);
+                $result = $this->BaiduWeather($city, $date_input, $date_nor);
                 break;
             case "unit_search_constellation":
                 foreach ($slots as $slot) {
