@@ -151,10 +151,18 @@ class UnitListener extends BaseListener
             $current_tem = explode("：", $current_tem);
             $current_tem = $current_tem[1];
             $current_tem = substr($current_tem, 0, -1);
-            $response = $city . "当前温度：" . $current_tem . "\n" .
-                $date_input . $forecast['weather'] . "\n" .
-                "温度：" . $forecast['temperature'] . "\n" .
-                "风力：" . $forecast['wind'];
+	    if($num == 0){
+            	$response = $city . "当前温度：" . $current_tem . "\n" .
+			"pm2.5：" . $res["results"][0]["pm25"] . "\n" .
+                	$date_input . $forecast['weather'] . "\n" .
+                	"温度：" . $forecast['temperature'] . "\n" .
+                	"风力：" . $forecast['wind'] . "\n" .
+			$res["results"][0]["index"][0]["des"];
+	    }else{
+		$response = $city . $date_input . $forecast['weather'] . "\n" .
+                        "温度：" . $forecast['temperature'] . "\n" .
+                        "风力：" . $forecast['wind'];
+	    }
         } else {
             $response = "对不起，找不到{$city}的天气情况";
         }
